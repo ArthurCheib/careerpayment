@@ -28,13 +28,3 @@ for (i in seq_along(all_files)) {
 
 colnames(empty_df) <- real_cols_names
 
-
-
-
-ggplot(dados_bia, aes(x = year, y = V10)) +
-  geom_point()
-  
-
-dados_bia <- empty_df %>% 
-filter(V2 == "BEATRICE CORREA DE OLIVEIRA")
-
