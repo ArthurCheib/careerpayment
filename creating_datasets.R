@@ -103,7 +103,6 @@ lookup_df$CONCLUSAO_GRAD <- as.Date(lookup_df$CONCLUSAO_GRAD, origin = "1899-12-
 
 
 write.csv(lookup_df, "lookup_dataset.csv")
-write.csv(eppggs_df_wrangled, "eppggs_dataset.csv")
 
 # Joining lookup df with the main dataset for forging the Final Dataset for analysis
 eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
@@ -115,3 +114,5 @@ eppggs_df_final <- eppggs_df_final %>%
   select("MASP", "NOME", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
+
+write.csv(eppggs_df_final, "eppggs_dataset.csv")
