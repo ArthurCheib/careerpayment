@@ -24,4 +24,4 @@ real_cols_names <- c("MASP", "NOME","SITUACAO_SERVIDOR", "CARGO_EFETIVO", "TEM_A
 
 colnames(eppggs_df) <- real_cols_names
 
-write_excel_csv(x = eppggs_df, path = getwd(), col_names = TRUE)
+write.csv(file = eppggs_df, sep = "|", col_names = TRUE)
