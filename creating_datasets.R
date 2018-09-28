@@ -2,7 +2,9 @@ library(tidyverse)
 library(readxl)
 library(data.table)
 
-# Creating the main dataset by subsetting only the rows needed ------------------------------
+
+
+# CREATING THE MAIN DATASET ------------------------------
 
 eppggs_df <- data.frame()
 all_files <- list.files(pattern = '.csv')
@@ -34,12 +36,30 @@ eppggs_df <- eppggs_df[-temp_01, ]
 #Removing "acentos" for preparing the data to be joined (let it equal to the lookup_df)
 eppggs_df$NOME <- map_chr(eppggs_df$NOME, iconv, from="UTF-8",to="ASCII//TRANSLIT")
 
-write.csv(eppggs_df, "eppggs_dataset.csv")
 
 
-# Creating the secondary dataset (o be used as lookup table) -----------
+# LAST WRANGLING FOR THE FINAL ARRANGE
 
-library(readxl)
+# Separating last column into three and removing two other columns (this line should have come earlier). --
+eppggs_df_wrangled <- eppggs_df %>% 
+  separate(ANO, c("ANO", "MES"), "_") %>% 
+  separate(MES, c("MES", "DIA"), "\\.") %>%
+  select(-c(JUDIC, TEM_APOST))
+
+eppggs_df_wrangled$DIA <- 5
+
+# Coercing cols into rigth data types and creating new column date format:
+eppggs_df_wrangled$ANO <- as.numeric(eppggs_df_wrangled$ANO)
+eppggs_df_wrangled$MES <- as.numeric(eppggs_df_wrangled$MES)
+
+eppggs_df_wrangled <- eppggs_df_wrangled %>% 
+  unite(DATA_SALARIO, c("ANO", "MES", "DIA"), sep = "-")
+
+eppggs_df_wrangled$DATA_SALARIO <- ymd(eppggs_df_wrangled$DATA_SALARIO)
+
+
+
+# CREATING THE SECONDARY DATASET (TO BE USED AS LOOKUP TABLE) -----------
 
 lookup_df <- data.frame()
 csap_file <- list.files(pattern = 'csap')
@@ -68,7 +88,10 @@ lookup_df$NOME <- map_chr(lookup_df$NOME, iconv, from="UTF-8",to="ASCII//TRANSLI
 to_be_removed <- c("DESLIGADO", "DESLIGADO EM 04/02/2013", "DESLIGADO EM 13/05/2013",
                    "DISCPLINAS PENDENTES EM CURSO", NA, "DESLIGADA",
                    "1º/04/2008", "DESSITENTE", "DESISTENTE")
+
+# Creating function to be the "not in" verb:
 `%!in%` = Negate(`%in%`)
+
 lookup_df <- lookup_df %>% 
   filter(CONCLUSAO_GRAD %!in% to_be_removed)
 
@@ -80,8 +103,15 @@ lookup_df$CONCLUSAO_GRAD <- as.Date(lookup_df$CONCLUSAO_GRAD, origin = "1899-12-
 
 
 write.csv(lookup_df, "lookup_dataset.csv")
+write.csv(eppggs_df_wrangled, "eppggs_dataset.csv")
 
 # Joining lookup df with the main dataset for forging the Final Dataset for analysis
 eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
-names(eppggs_df_final)[20] <- "ANO_SALARIO"
-names(eppggs_df_final)[21] <- "MES_SALARIO"
+
+#Final adjustments:
+eppggs_df_final <- eppggs_df_final[-c(3,4)]
+
+eppggs_df_final <- eppggs_df_final %>% 
+  select("MASP", "NOME", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
+         "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
+         "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
