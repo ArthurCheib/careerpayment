@@ -24,4 +24,7 @@ real_cols_names <- c("MASP", "NOME","SITUACAO_SERVIDOR", "CARGO_EFETIVO", "TEM_A
 
 colnames(eppggs_df) <- real_cols_names
 
-write.csv(file = eppggs_df, sep = "|", col_names = TRUE)
+eppggs_df[c(1, 9:21)] <- map_df(eppggs_df[c(1, 9:21)], str_replace, "\\,", "\\.")
+eppggs_df[c(1, 9:21)] <- map_df(eppggs_df[c(1, 9:21)], as.numeric)
+
+write.csv(eppggs_df, "eppggs_dataset.csv")
