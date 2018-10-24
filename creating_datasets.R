@@ -3,8 +3,6 @@ library(readxl)
 library(data.table)
 library(lubridate)
 
-
-
 # CREATING THE MAIN DATASET ------------------------------
 
 eppggs_df <- data.frame()
@@ -102,8 +100,6 @@ lookup_df$INICIO_GRAD <- as.Date(lookup_df$INICIO_GRAD, origin = "1899-12-30")
 lookup_df$CONCLUSAO_GRAD <- as.Date(lookup_df$CONCLUSAO_GRAD, origin = "1899-12-30")
 
 
-write.csv(lookup_df, "lookup_dataset.csv")
-
 # Joining lookup df with the main dataset for forging the Final Dataset for analysis
 eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 
@@ -118,3 +114,4 @@ eppggs_df_final <- eppggs_df_final %>%
 rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i, lookup_df)
 
 write.csv(eppggs_df_final, "eppggs_dataset.csv")
+write.csv(lookup_df, "lookup_dataset.csv")
