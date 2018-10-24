@@ -1,6 +1,7 @@
 library(tidyverse)
 library(readxl)
 library(data.table)
+library(lubridate)
 
 
 
@@ -64,7 +65,6 @@ eppggs_df_wrangled$DATA_SALARIO <- ymd(eppggs_df_wrangled$DATA_SALARIO)
 lookup_df <- data.frame()
 csap_file <- list.files(pattern = 'csap')
 sheets <- excel_sheets("csap.xlsx")
-sheets <- sheets[-c(32,33)]
 
 for (i in seq_along(sheets)) {
   
@@ -114,5 +114,7 @@ eppggs_df_final <- eppggs_df_final %>%
   select("MASP", "NOME", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
+
+rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i, lookup_df)
 
 write.csv(eppggs_df_final, "eppggs_dataset.csv")
