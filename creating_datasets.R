@@ -7,6 +7,7 @@ library(lubridate)
 
 eppggs_df <- data.frame()
 all_files <- list.files(pattern = '.csv')
+all_files <- all_files[-c(61,62)]
 
 for (i in seq_along(all_files)) {
   
@@ -34,7 +35,6 @@ eppggs_df <- eppggs_df[-temp_01, ]
 
 #Removing "acentos" for preparing the data to be joined (let it equal to the lookup_df)
 eppggs_df$NOME <- map_chr(eppggs_df$NOME, iconv, from="UTF-8",to="ASCII//TRANSLIT")
-
 
 
 # LAST WRANGLING FOR THE FINAL ARRANGE
@@ -75,7 +75,7 @@ for (i in seq_along(sheets)) {
 
 # Inserting real columns names to the df
 lookup_df <- lookup_df[-1]
-real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "CSAP")
+real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP")
 colnames(lookup_df) <- real_names
 
 # Removing "acentos" and uppering case for "NOME" column
@@ -107,11 +107,8 @@ eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 eppggs_df_final <- eppggs_df_final[-c(3,4)]
 
 eppggs_df_final <- eppggs_df_final %>% 
-  select("MASP", "NOME", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
+  select("MASP", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
 
 rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i, lookup_df)
-
-write.csv(eppggs_df_final, "eppggs_dataset.csv")
-write.csv(lookup_df, "lookup_dataset.csv")
