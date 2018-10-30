@@ -5,6 +5,7 @@ library(lubridate)
 
 # CREATING THE MAIN DATASET ------------------------------
 
+setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
 eppggs_df <- data.frame()
 all_files <- list.files(pattern = '.csv')
 all_files <- all_files[-c(61,62)]
@@ -75,7 +76,9 @@ for (i in seq_along(sheets)) {
 
 # Inserting real columns names to the df
 lookup_df <- lookup_df[-1]
+
 real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP")
+real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO","CSAP")
 colnames(lookup_df) <- real_names
 
 # Removing "acentos" and uppering case for "NOME" column
@@ -111,4 +114,25 @@ eppggs_df_final <- eppggs_df_final %>%
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
 
-rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i, lookup_df)
+rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names,
+   sheets, temp_01, to_be_removed, i, lookup_df)
+
+
+
+# Initializing padronization ----------------------------------------------
+eppggs_df_final <- eppggs_df_final %>% 
+  mutate(CARGO = case_when(CARGO_COMISSAO == "" ~ "SEM CARGO",
+                          TRUE ~ "COM CARGO")) %>%
+  mutate(ORGAO_ENTIDADE = case_when(ORGAO_ENTIDADE == all_places[[1]][9] ~ all_places[[1]][8],
+                                    ORGAO_ENTIDADE == all_places[[1]][12] ~ all_places[[1]][11],
+                                    ORGAO_ENTIDADE == all_places[[1]][25] ~ all_places[[1]][24],
+                                    ORGAO_ENTIDADE == all_places[[1]][28] ~ all_places[[1]][27],
+                                    ORGAO_ENTIDADE == all_places[[1]][30] ~ all_places[[1]][29],
+                                    ORGAO_ENTIDADE == all_places[[1]][32] ~ all_places[[1]][31],
+                                    ORGAO_ENTIDADE == all_places[[1]][34] ~ all_places[[1]][33],
+                                    ORGAO_ENTIDADE == all_places[[1]][41] ~ all_places[[1]][40],
+                                    ORGAO_ENTIDADE == all_places[[1]][46] ~ all_places[[1]][49],
+                                    ORGAO_ENTIDADE == all_places[[1]][65] ~ all_places[[1]][66],
+                                    ORGAO_ENTIDADE == all_places[[1]][78] ~ all_places[[1]][77],
+                                    ORGAO_ENTIDADE == all_places[[1]][80] ~ all_places[[1]][79],
+                                    TRUE ~ ORGAO_ENTIDADE))
