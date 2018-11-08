@@ -115,12 +115,9 @@ eppggs_df_final <- eppggs_df_final %>%
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
 
-<<<<<<< HEAD
-rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i)
-=======
-rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names,
-   sheets, temp_01, to_be_removed, i, lookup_df)
 
+rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names,
+   real_names, sheets, temp_01, to_be_removed, i)
 
 
 # Initializing padronization ----------------------------------------------
@@ -140,4 +137,3 @@ eppggs_df_final <- eppggs_df_final %>%
                                     ORGAO_ENTIDADE == all_places[[1]][78] ~ all_places[[1]][77],
                                     ORGAO_ENTIDADE == all_places[[1]][80] ~ all_places[[1]][79],
                                     TRUE ~ ORGAO_ENTIDADE))
->>>>>>> e312505f166a322d2825db55d726604ddfd7a960
