@@ -6,7 +6,8 @@ library(lubridate)
 # CREATING THE MAIN DATASET ------------------------------
 
 eppggs_df <- data.frame()
-all_files <- list.files(pattern = '.csv')
+setwd("C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores")
+all_files <- list.files(path = "C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores", pattern = '.csv')
 all_files <- all_files[-c(61,62)]
 
 for (i in seq_along(all_files)) {
@@ -112,4 +113,4 @@ eppggs_df_final <- eppggs_df_final %>%
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
 
-rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i)
+rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i)
