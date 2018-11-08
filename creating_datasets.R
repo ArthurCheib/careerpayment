@@ -5,6 +5,7 @@ library(lubridate)
 
 # CREATING THE MAIN DATASET ------------------------------
 
+setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
 eppggs_df <- data.frame()
 setwd("C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores")
 all_files <- list.files(path = "C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores", pattern = '.csv')
@@ -36,7 +37,6 @@ eppggs_df <- eppggs_df[-temp_01, ]
 
 #Removing "acentos" for preparing the data to be joined (let it equal to the lookup_df)
 eppggs_df$NOME <- map_chr(eppggs_df$NOME, iconv, from="UTF-8",to="ASCII//TRANSLIT")
-
 
 
 # LAST WRANGLING FOR THE FINAL ARRANGE
@@ -77,6 +77,8 @@ for (i in seq_along(sheets)) {
 
 # Inserting real columns names to the df
 lookup_df <- lookup_df[-1]
+
+real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP")
 real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO","CSAP")
 colnames(lookup_df) <- real_names
 
@@ -109,8 +111,33 @@ eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 eppggs_df_final <- eppggs_df_final[-c(3,4)]
 
 eppggs_df_final <- eppggs_df_final %>% 
-  select("MASP", "NOME", "SEXO","CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
+  select("MASP", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
          "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
          "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
 
+<<<<<<< HEAD
 rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names, sheets, temp_01, to_be_removed, i)
+=======
+rm(eppggs_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names, real_names,
+   sheets, temp_01, to_be_removed, i, lookup_df)
+
+
+
+# Initializing padronization ----------------------------------------------
+eppggs_df_final <- eppggs_df_final %>% 
+  mutate(CARGO = case_when(CARGO_COMISSAO == "" ~ "SEM CARGO",
+                          TRUE ~ "COM CARGO")) %>%
+  mutate(ORGAO_ENTIDADE = case_when(ORGAO_ENTIDADE == all_places[[1]][9] ~ all_places[[1]][8],
+                                    ORGAO_ENTIDADE == all_places[[1]][12] ~ all_places[[1]][11],
+                                    ORGAO_ENTIDADE == all_places[[1]][25] ~ all_places[[1]][24],
+                                    ORGAO_ENTIDADE == all_places[[1]][28] ~ all_places[[1]][27],
+                                    ORGAO_ENTIDADE == all_places[[1]][30] ~ all_places[[1]][29],
+                                    ORGAO_ENTIDADE == all_places[[1]][32] ~ all_places[[1]][31],
+                                    ORGAO_ENTIDADE == all_places[[1]][34] ~ all_places[[1]][33],
+                                    ORGAO_ENTIDADE == all_places[[1]][41] ~ all_places[[1]][40],
+                                    ORGAO_ENTIDADE == all_places[[1]][46] ~ all_places[[1]][49],
+                                    ORGAO_ENTIDADE == all_places[[1]][65] ~ all_places[[1]][66],
+                                    ORGAO_ENTIDADE == all_places[[1]][78] ~ all_places[[1]][77],
+                                    ORGAO_ENTIDADE == all_places[[1]][80] ~ all_places[[1]][79],
+                                    TRUE ~ ORGAO_ENTIDADE))
+>>>>>>> e312505f166a322d2825db55d726604ddfd7a960
