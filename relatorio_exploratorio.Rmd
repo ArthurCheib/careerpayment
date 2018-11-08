@@ -1,0 +1,44 @@
+---
+title: "Salários EPPPGG - Análise Exploratória"
+output: github_document
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(readxl)
+library(data.table)
+library(purrr)
+```
+
+##  Verificar distribuição salarial da carreira por ano (tendência anual)
+* a. Descontar cálculo anual da inflação usando 2013 como período-base
+* b. Aumento percentual ano a ano da carreira (aumento real do salário)
+* c. Verificar distribuição do aumento ao longos dos meses do ano (cada linha = ano; eixo x = mes)
+
+## Quebrar análise por sexo:
+
+* a. Inserir manualmente o sexo de cada pessoa
+* b. Verificar avanço número da proporção homens x mulheres
+* c. Verificar relação salarial entre os sexos (como fazer isso levando em conta a desprorporção)
+* d. Qual foi o tempo médio gasto por um csapiano para assumir um cargo em até 02 anos ()
+
+## Quebrar a análise por CSAP:
+* Proporcionalmente, quanl CSAP tem hoje o melhor desempenho em:
+* Permanência na carreira (prop. de quantos entraram e quantos saíram)
+* Desempenho salarial global
+* Rising stars (maior quantidade de cargos ou prop de csapianos com cargos)
+
+
+### Visualização geral das variáveis numéricas:
+```{r}
+summary(eppggs_df_final)
+
+eppggs_df_final %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+  geom_histogram()
+```
+
+        
