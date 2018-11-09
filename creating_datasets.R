@@ -111,16 +111,15 @@ eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 eppggs_df_final <- eppggs_df_final[-c(3,4)]
 
 eppggs_df_final <- eppggs_df_final %>% 
-  select("MASP", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA",
-         "REM_BASICA_BRUTA", "TETO", "FERIAS", "DECTER", "PREMIO", "FERIASPREM", "JETONS", "EVENTUAL",
-         "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
-
+  mutate(CSAP = paste0("CSAP ", CSAP))
 
 rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names,
    real_names, sheets, temp_01, to_be_removed, i)
 
 
-# Initializing padronization ----------------------------------------------
+# Deduplicação dos locais de trabalho ----------------------------------------------
+all_places <- eppggs_df_final %>% count(ORGAO_ENTIDADE)
+
 eppggs_df_final <- eppggs_df_final %>% 
   mutate(CARGO = case_when(CARGO_COMISSAO == "" ~ "SEM CARGO",
                           TRUE ~ "COM CARGO")) %>%
@@ -136,4 +135,11 @@ eppggs_df_final <- eppggs_df_final %>%
                                     ORGAO_ENTIDADE == all_places[[1]][65] ~ all_places[[1]][66],
                                     ORGAO_ENTIDADE == all_places[[1]][78] ~ all_places[[1]][77],
                                     ORGAO_ENTIDADE == all_places[[1]][80] ~ all_places[[1]][79],
-                                    TRUE ~ ORGAO_ENTIDADE))
+                                    TRUE ~ ORGAO_ENTIDADE)) %>%
+  mutate(ANO_SALARIO = year(DATA_SALARIO)) %>% 
+  select("MASP", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "CARGO", "ORGAO_ENTIDADE", "DESCUNID",
+         "REM_BASICA_BRUTA", "FERIAS", "EVENTUAL", "IRRF", "CONT.PREVIDENCIRIA",
+         "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
+  
+
+save(eppggs_df_final, "eppggs_dataset.RData")
