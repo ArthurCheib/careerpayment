@@ -15,6 +15,16 @@ library(purrr)
 * b. Aumento percentual ano a ano da carreira (aumento real do salário)
 * c. Verificar distribuição do aumento ao longos dos meses do ano (cada linha = ano; eixo x = mes)
 
+Para realizar a deflação dos valores reais:
+
+library(deflateBR)
+eppggs_df_final %>% mutate(reais_deflacionados = deflate(REM_POS_DEDUCOES, DATA_SALARIO, "01/2017", "ipca"))
+
+```{r}
+
+```
+
+
 ## Quebrar análise por sexo:
 
 * a. Inserir manualmente o sexo de cada pessoa
