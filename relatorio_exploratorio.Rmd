@@ -9,12 +9,13 @@ library(readxl)
 library(data.table)
 library(deflateBR)
 library(scales)
+library(ggthemes)
 ```
 
 Para acessar do meu PC:
 ```{r}
 setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
-load("eppggs.RData")
+load("eppggs_dataset.RData")
 ```
 
 Para acessar do PC do Trabalho
@@ -28,7 +29,7 @@ load()
 ```{r echo=FALSE}
 summary(eppggs_df_final)
 
-eppggs_df_final %>%
+eppggs_dataset %>%
   keep(is.numeric) %>% 
   gather() %>% 
   ggplot(aes(value)) +
@@ -42,13 +43,34 @@ eppggs_df_final %>%
 * c. Verificar distribuição do aumento ao longos dos meses do ano (cada linha = ano; eixo x = mes)
 
 ```{r}
-eppggs_df_final %>% 
-  group_by(DATA_SALARIO) %>% 
+eppggs_dataset %>% 
+  group_by(CSAP, DATA_SALARIO) %>% 
   summarize(TOTAL_CARREIRA = sum(REM_POS_DEDUCOES)) %>% 
-  ggplot(aes(DATA_SALARIO, TOTAL_CARREIRA)) +
+  ggplot(aes(CSAP, TOTAL_CARREIRA, color = CSAP)) +
   geom_col() +
   coord_flip() +
   scale_y_continuous(labels = dollar_format())
+```
+
+Evolução da quantidade de EPPGGS na folha salarial entre 2013 e 2017
+```{r}
+eppggs_dataset %>% 
+  group_by(ANO_SALARIO) %>% 
+  summarize(TOTAL = n_distinct(CODIGO)) %>%
+  ggplot(aes(ANO_SALARIO, TOTAL, fill = ANO_SALARIO)) +
+  geom_col() +
+  labs(title = "Evolução do total de Especialistas em Políticas Públicas \n e Gestão Governamental - entre 2013 e 2017",
+       subtitle = "Estado de Minas Gerais") +
+  theme_economist()
+```
+
+
+```{r}
+eppggs_dataset %>% 
+  group_by(ANO_SALARIO, CODIGO, CSAP, SEXO, CARGO_COMISSAO, ORGAO_ENTIDADE, CARGO, DESCUNID, INICIO_GRAD, CONCLUSAO_GRAD) %>%
+  summarize_at(REM_BASICA_BRUTA, FERIAS, IRRF, CONT.PREVIDENCIRIA, REM_POS_DEDUCOES, sum(),
+               MESES = n())
+
 ```
 
 
@@ -60,8 +82,7 @@ eppggs_df_final %>% mutate(reais_deflacionados = deflate(REM_POS_DEDUCOES, DATA_
 
 ## Quebrar análise por sexo:
 
-* a. Inserir manualmente o sexo de cada pessoa
-* b. Verificar avanço número da proporção homens x mulheres
+* b. Verificar avanço número da proporção homens x mulheres (salário médio entre csaps (homens x mulheres))
 * c. Verificar relação salarial entre os sexos (como fazer isso levando em conta a desprorporção)
 * d. Qual foi o tempo médio gasto por um csapiano para assumir um cargo em até 02 anos ()
 
@@ -70,6 +91,11 @@ eppggs_df_final %>% mutate(reais_deflacionados = deflate(REM_POS_DEDUCOES, DATA_
 * Permanência na carreira (prop. de quantos entraram e quantos saíram)
 * Desempenho salarial global
 * Rising stars (maior quantidade de cargos ou prop de csapianos com cargos)
+
+## Análise do fluxo de EPPGG's dentro do Estado:
+* Principal secretaria em que estão alocados
+* Fluxo ao longo de 2013 - 2018 entre secretarias
+* Fluxo entrada e saída de EPPGGS's na carreira
 
 
 ### Visualização geral das variáveis numéricas:
@@ -83,5 +109,8 @@ eppggs_df_final %>%
   facet_wrap(~ key, scales = "free") +
   geom_histogram()
 ```
+
+
+# Problema do código com o caso dos csap que não foi possível encontrar o CSAP (galera do concurso)
 
         
