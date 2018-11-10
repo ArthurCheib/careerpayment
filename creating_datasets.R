@@ -7,8 +7,8 @@ library(lubridate)
 
 setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
 eppggs_df <- data.frame()
-setwd("C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores")
-all_files <- list.files(path = "C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores", pattern = '.csv')
+#2setwd("C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores")
+all_files <- list.files(path = getwd(), pattern = '.csv')
 all_files <- all_files[-c(61,62)]
 
 for (i in seq_along(all_files)) {
@@ -21,7 +21,7 @@ for (i in seq_along(all_files)) {
   rm(x)
 }
 
-real_cols_names <- c("MASP", "NOME","SITUACAO_SERVIDOR", "CARGO_EFETIVO", "TEM_APOST", "CARGO_COMISSAO",
+real_cols_names <- c("CODIGO", "NOME","SITUACAO_SERVIDOR", "CARGO_EFETIVO", "TEM_APOST", "CARGO_COMISSAO",
                      "ORGAO_ENTIDADE", "DESCUNID", "CARGA_HORARIA", "REM_BASICA_BRUTA",
                      "TETO", "JUDIC", "FERIAS","DECTER", "PREMIO", "FERIASPREM", "JETONS",
                      "EVENTUAL", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES", "ANO")
@@ -79,7 +79,6 @@ for (i in seq_along(sheets)) {
 lookup_df <- lookup_df[-1]
 
 real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP")
-real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO","CSAP")
 colnames(lookup_df) <- real_names
 
 # Removing "acentos" and uppering case for "NOME" column
@@ -120,7 +119,7 @@ rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_nam
 # Deduplicação dos locais de trabalho ----------------------------------------------
 all_places <- eppggs_df_final %>% count(ORGAO_ENTIDADE)
 
-eppggs_df_final <- eppggs_df_final %>% 
+eppggs_dataset <- eppggs_df_final %>% 
   mutate(CARGO = case_when(CARGO_COMISSAO == "" ~ "SEM CARGO",
                           TRUE ~ "COM CARGO")) %>%
   mutate(ORGAO_ENTIDADE = case_when(ORGAO_ENTIDADE == all_places[[1]][9] ~ all_places[[1]][8],
@@ -137,9 +136,10 @@ eppggs_df_final <- eppggs_df_final %>%
                                     ORGAO_ENTIDADE == all_places[[1]][80] ~ all_places[[1]][79],
                                     TRUE ~ ORGAO_ENTIDADE)) %>%
   mutate(ANO_SALARIO = year(DATA_SALARIO)) %>% 
-  select("MASP", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "CARGO", "ORGAO_ENTIDADE", "DESCUNID",
-         "REM_BASICA_BRUTA", "FERIAS", "EVENTUAL", "IRRF", "CONT.PREVIDENCIRIA",
-         "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD")
+  filter(!(is.na(CSAP))) %>% 
+  select("CODIGO", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "CARGO", "ORGAO_ENTIDADE", "DESCUNID",
+         "REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA",
+         "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD", "ANO_SALARIO")
   
 
-save(eppggs_df_final, "eppggs_dataset.RData")
+save(... = eppggs_dataset, file = "eppggs_dataset.RData")
