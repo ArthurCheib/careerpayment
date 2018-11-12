@@ -44,11 +44,12 @@ eppggs_dataset %>%
 
 ```{r}
 eppggs_dataset %>% 
-  group_by(CSAP, DATA_SALARIO) %>% 
+  group_by(ANO_SALARIO, CSAP, DATA_SALARIO) %>% 
   summarize(TOTAL_CARREIRA = sum(REM_POS_DEDUCOES)) %>% 
-  ggplot(aes(CSAP, TOTAL_CARREIRA, color = CSAP)) +
+  ggplot(aes(fct_reorder(CSAP, TOTAL_CARREIRA), TOTAL_CARREIRA, fill = CSAP)) +
   geom_col() +
   coord_flip() +
+  facet_wrap(.~ ANO_SALARIO) +
   scale_y_continuous(labels = dollar_format())
 ```
 
@@ -59,20 +60,72 @@ eppggs_dataset %>%
   summarize(TOTAL = n_distinct(CODIGO)) %>%
   ggplot(aes(ANO_SALARIO, TOTAL, fill = ANO_SALARIO)) +
   geom_col() +
-  labs(title = "Evolução do total de Especialistas em Políticas Públicas \n e Gestão Governamental - entre 2013 e 2017",
-       subtitle = "Estado de Minas Gerais") +
-  theme_economist()
+  geom_text(aes(label = TOTAL), position = position_dodge(width = 0.9), vjust = -0.45, size = 3.5) +
+  ylim(0, 800) +
+  labs(title = "Evolução do total de servidores no Estado de MG - 2013 e 2017",
+       subtitle = "Carreira de Especialistas em Políticas Públicas e Gestão Governamental",
+       x = "ANO",
+       y = "QUANTIDADE") +
+  theme_economist() +
+  theme(legend.position="none",
+        plot.title = element_text(hjust = 0, size = 14))
 ```
+
+Número de csapianos por CSAP
+```{r}
+eppggs_dataset %>% 
+  group_by(CSAP) %>% 
+  summarize(TOTAL = n_distinct(CODIGO)) %>% 
+  arrange(CSAP)
+```
+
+Range salarial dos EPPGG's por CSAP
+```{r}
+
+
+eppggs_dataset %>% 
+  mutate(TOTAL_DEFLATED = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "11/2017", "ipca"), digits = 2)) %>% 
+  select(REM_POS_DEDUCOES, (TOTAL_DEFLATED))
+```
+
+
+
+Número de csapianos por sexo + Percentual de mulheres trabalhando
+```{r}
+eppgg_by_year %>%
+  group_by(ANO_SALARIO, SEXO) %>% 
+  filter(!is.na(SEXO)) %>% 
+  summarize(TOTAL = n_distinct(CODIGO)) %>% 
+  spread(key = SEXO, value = TOTAL) %>% 
+  mutate(PERCENT_M = round(FEMININO/(FEMININO + MASCULINO)*100, digits = 1)) %>% 
+  gather(SEXO, TOTAL, -ANO_SALARIO, - PERCENT_M) %>% 
+  select(-SEXO, -TOTAL) %>% 
+  slice(., 1) %>% 
+  ggplot(aes(x = ANO_SALARIO, y = PERCENT_M)) +
+    geom_line(size = 0.65) +
+    geom_point(colour="white", size=2, fill="white") +
+    labs(title = "Percentual de mulheres na carreira de EPPGG",
+       subtitle = "Evolução % entre os anos de 2013 a 2017",
+       x = "ANO",
+       y = "PERCENTUAL") +
+    geom_text(aes(label = PERCENT_M), position = position_dodge(width = 0.9), vjust = -0.45, size = 4) +
+    ylim(42.5, 50) +
+    theme_economist()
+```
+
 
 
 ```{r}
-eppggs_dataset %>% 
-  group_by(ANO_SALARIO, CODIGO, CSAP, SEXO, CARGO_COMISSAO, ORGAO_ENTIDADE, CARGO, DESCUNID, INICIO_GRAD, CONCLUSAO_GRAD) %>%
-  summarize_at(REM_BASICA_BRUTA, FERIAS, IRRF, CONT.PREVIDENCIRIA, REM_POS_DEDUCOES, sum(),
-               MESES = n())
+eppgg_by_year <- eppggs_dataset %>% 
+  group_by(ANO_SALARIO, CODIGO, NOME, CSAP, SEXO, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
+  summarise_at(c("REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES"), sum) %>% 
+  arrange(NOME)
 
+
+eppgg_resum <- eppggs_dataset %>% 
+  group_by(ANO_SALARIO, CODIGO, CSAP, SEXO, CARGO_COMISSAO, ORGAO_ENTIDADE, CARGO, DESCUNID, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
+  summarise_at(c("REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES"), sum)
 ```
-
 
 Para realizar a deflação dos valores reais:
 
@@ -96,19 +149,6 @@ eppggs_df_final %>% mutate(reais_deflacionados = deflate(REM_POS_DEDUCOES, DATA_
 * Principal secretaria em que estão alocados
 * Fluxo ao longo de 2013 - 2018 entre secretarias
 * Fluxo entrada e saída de EPPGGS's na carreira
-
-
-### Visualização geral das variáveis numéricas:
-```{r}
-summary(eppggs_df_final)
-
-eppggs_df_final %>%
-  keep(is.numeric) %>% 
-  gather() %>% 
-  ggplot(aes(value)) +
-  facet_wrap(~ key, scales = "free") +
-  geom_histogram()
-```
 
 
 # Problema do código com o caso dos csap que não foi possível encontrar o CSAP (galera do concurso)
