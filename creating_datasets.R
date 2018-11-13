@@ -75,15 +75,18 @@ for (i in seq_along(sheets)) {
   rm(x)
 }
 
-# Inserting real columns names to the df
 lookup_df <- lookup_df[-1]
 
-real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP")
+lookup_df <- lookup_df %>% 
+  mutate(CODIGO_ALUNO = c(1:1161))
+
+real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP_RANK", "CODIGO_ALUNO")
 colnames(lookup_df) <- real_names
 
 # Removing "acentos" and uppering case for "NOME" column
 lookup_df$NOME <- toupper(lookup_df$NOME)
 lookup_df$NOME <- map_chr(lookup_df$NOME, iconv, from="UTF-8",to="ASCII//TRANSLIT")
+lookup_df$CSAP_RANK <- as.numeric(lookup_df$CSAP_RANK)
 
 # Choosing rows to be filtered (not needed)
 to_be_removed <- c("DESLIGADO", "DESLIGADO EM 04/02/2013", "DESLIGADO EM 13/05/2013",
@@ -94,7 +97,9 @@ to_be_removed <- c("DESLIGADO", "DESLIGADO EM 04/02/2013", "DESLIGADO EM 13/05/2
 `%!in%` = Negate(`%in%`)
 
 lookup_df <- lookup_df %>% 
-  filter(CONCLUSAO_GRAD %!in% to_be_removed)
+  filter(CONCLUSAO_GRAD %!in% to_be_removed) %>% 
+  select(NOME, CODIGO_ALUNO, SEXO, CSAP_RANK, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
+  arrange(CSAP_RANK, NOME)
 
 # Coercing for numeric and transforming excel date format in R date format:
 lookup_df$INICIO_GRAD <- as.numeric(lookup_df$INICIO_GRAD)
@@ -103,6 +108,14 @@ lookup_df$INICIO_GRAD <- as.Date(lookup_df$INICIO_GRAD, origin = "1899-12-30")
 lookup_df$CONCLUSAO_GRAD <- as.Date(lookup_df$CONCLUSAO_GRAD, origin = "1899-12-30")
 
 
+#Remoção de alunos com conclusão de curso em duas datas diferentes (uma para sua turma oriinal e outra na turma com a qual concluiu)
+duplicados_nome <- which(duplicated(lookup_df$NOME))
+
+grad_duplicada <- lookup_df %>% filter(NOME %in% lookup_df[c(910, 920), 1]) %>% select(CODIGO_ALUNO) %>% slice(c(3,4))
+
+lookup_df <- lookup_df %>% 
+  filter(CODIGO_ALUNO %!in% grad_duplicada$CODIGO_ALUNO)
+
 # Joining lookup df with the main dataset for forging the Final Dataset for analysis
 eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 
@@ -110,7 +123,7 @@ eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 eppggs_df_final <- eppggs_df_final[-c(3,4)]
 
 eppggs_df_final <- eppggs_df_final %>% 
-  mutate(CSAP = paste0("CSAP ", CSAP))
+  mutate(CSAP = paste0("CSAP ", CSAP_RANK))
 
 rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_names,
    real_names, sheets, temp_01, to_be_removed, i)
@@ -136,9 +149,9 @@ eppggs_dataset <- eppggs_df_final %>%
                                     ORGAO_ENTIDADE == all_places[[1]][80] ~ all_places[[1]][79],
                                     TRUE ~ ORGAO_ENTIDADE)) %>%
   mutate(ANO_SALARIO = year(DATA_SALARIO)) %>% 
-  filter(!(is.na(CSAP))) %>% 
-  select("CODIGO", "NOME", "SEXO", "CSAP", "CARGO_COMISSAO", "CARGO", "ORGAO_ENTIDADE", "DESCUNID",
-         "REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA",
+  filter(!(is.na(CSAP))) %>%
+  select("CODIGO", "NOME", "CODIGO_ALUNO", "SEXO", "CSAP", "CSAP_RANK", "CARGO_COMISSAO", "CARGO", "ORGAO_ENTIDADE", "DESCUNID",
+         "REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "EVENTUAL", "DECTER",
          "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD", "ANO_SALARIO")
   
 

@@ -53,6 +53,17 @@ eppggs_dataset %>%
   scale_y_continuous(labels = dollar_format())
 ```
 
+```{r}
+eppgg_by_year <- eppggs_dataset %>% 
+  group_by(ANO_SALARIO, CODIGO, NOME, CSAP, SEXO, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
+  summarise_at(c("REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES"), sum) %>% 
+  arrange(NOME)
+
+eppgg_resum <- eppggs_dataset %>% 
+  group_by(ANO_SALARIO, CODIGO, CSAP, SEXO, CARGO_COMISSAO, ORGAO_ENTIDADE, CARGO, DESCUNID, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
+  summarise_at(c("REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES"), sum)
+```
+
 Evolução da quantidade de EPPGGS na folha salarial entre 2013 e 2017
 ```{r}
 eppggs_dataset %>% 
@@ -72,26 +83,61 @@ eppggs_dataset %>%
 ```
 
 Número de csapianos por CSAP
-```{r}
-eppggs_dataset %>% 
-  group_by(CSAP) %>% 
+```{r fig.width=8, fig.height=6}
+
+abc <- eppggs_dataset %>%
+  filter(CSAP != "CSAP NA") %>% 
+  group_by(CSAP, CSAP_RANK) %>% 
+  summarize(MEAN = n_distinct(CODIGO)) %>% 
+  mutate(TOTAL = "TOTAL") %>% 
+  group_by(TOTAL) %>% 
+  summarize(MEAN = round(mean(MEAN)))
+
+mean_line <- abc[2][[1]]
+
+eppggs_dataset %>%
+  filter(CSAP != "CSAP NA") %>% 
+  group_by(CSAP, CSAP_RANK) %>% 
   summarize(TOTAL = n_distinct(CODIGO)) %>% 
-  arrange(CSAP)
+  arrange(CSAP_RANK) %>% 
+  ggplot(aes(x = fct_reorder(CSAP, TOTAL), y = TOTAL, fill = CSAP)) +
+  geom_col() +
+  theme_economist() +
+  coord_flip() +
+  geom_hline(yintercept = mean_line) +
+  geom_text(aes(10, mean_line,label = "Média de graduados \n por turma = 23", vjust = 3, hjust = -0.1)) +
+  theme(legend.position = "none",
+        plot.title = element_text( size = 12)) +
+  labs(title = "TOTAL DE ESPECIALISTAS EM POLÍTICAS PÚBLICAS \n E GESTÃO GOVERNAMENTAL - POR CSAP",
+       subtitle = "Dados obtidos até 12/2017",
+       y = "",
+       x = "QUANTIDADE")
+
 ```
 
-Range salarial dos EPPGG's por CSAP
+Range salarial dos EPPGG's por CSAP (gráfico com as duas pontinhas e a linha ao meio)
 ```{r}
 
-
-eppggs_dataset %>% 
-  mutate(TOTAL_DEFLATED = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "11/2017", "ipca"), digits = 2)) %>% 
-  select(REM_POS_DEDUCOES, (TOTAL_DEFLATED))
+eppggs_dataset %>%
+  filter(CSAP != "CSAP NA") %>% 
+  mutate(TOTAL_DEFLATED = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "11/2017", "ipca"), digits = 2)) %>%
+  select(-REM_POS_DEDUCOES) %>%
+  group_by(CODIGO, CSAP, CSAP_RANK) %>% 
+  summarize(TOTAL_FEITO = mean(TOTAL_DEFLATED)) %>% 
+  group_by(CSAP, CSAP_RANK) %>% 
+  summarize('25th' = quantile((TOTAL_FEITO), .25), 
+            '75th' = quantile((TOTAL_FEITO), .75)) %>%
+  gather(key = INDICADORES, value = VALORES, -CSAP, -CSAP_RANK) %>% 
+  ggplot(aes(VALORES, fct_reorder(CSAP, CSAP_RANK, .desc = T))) +
+  geom_line(aes(group = CSAP)) +
+  geom_point(aes(color = INDICADORES), size = 2.5)
+  
 ```
 
 
 
 Número de csapianos por sexo + Percentual de mulheres trabalhando
-```{r}
+```{r fig.width=8, fig.height=4}
 eppgg_by_year %>%
   group_by(ANO_SALARIO, SEXO) %>% 
   filter(!is.na(SEXO)) %>% 
@@ -106,26 +152,18 @@ eppgg_by_year %>%
     geom_point(colour="white", size=2, fill="white") +
     labs(title = "Percentual de mulheres na carreira de EPPGG",
        subtitle = "Evolução % entre os anos de 2013 a 2017",
-       x = "ANO",
+       x = "",
        y = "PERCENTUAL") +
     geom_text(aes(label = PERCENT_M), position = position_dodge(width = 0.9), vjust = -0.45, size = 4) +
     ylim(42.5, 50) +
     theme_economist()
 ```
 
-
-
+Análise salarial por csap entre homens e mulheres (gráfico do Felipe Flore: meio a meio)
 ```{r}
-eppgg_by_year <- eppggs_dataset %>% 
-  group_by(ANO_SALARIO, CODIGO, NOME, CSAP, SEXO, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
-  summarise_at(c("REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES"), sum) %>% 
-  arrange(NOME)
 
-
-eppgg_resum <- eppggs_dataset %>% 
-  group_by(ANO_SALARIO, CODIGO, CSAP, SEXO, CARGO_COMISSAO, ORGAO_ENTIDADE, CARGO, DESCUNID, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
-  summarise_at(c("REM_BASICA_BRUTA", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES"), sum)
 ```
+
 
 Para realizar a deflação dos valores reais:
 
