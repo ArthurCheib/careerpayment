@@ -1,0 +1,133 @@
+---
+title: "predictive_model"
+author: "ACH"
+date: "17 de novembro de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(rsample)
+```
+
+Para acessar do meu PC:
+```{r message=FALSE, warning=FALSE, include=FALSE}
+setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
+load("eppggs_dataset.RData")
+load("csap_dataset.RData")
+```
+
+Creating the dataset that will be splitted into training and test set.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ml_dataset <- eppggs_dataset %>%
+  filter(CSAP != "CSAP 30",
+         CSAP != "CSAP 31") %>%
+  mutate(REM_POS_DEDUCOES_DEF = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "10/2018", "ipca"), digits = 2),
+         REM_BASICA_BRUTA_DEF = round(deflate(REM_BASICA_BRUTA, DATA_SALARIO, "10/2018", "ipca"), digits = 2)) %>% 
+  group_by(ANO_SALARIO, CODIGO, NOME, CSAP, CSAP_RANK, SEXO, CONCLUSAO_GRAD) %>% 
+  summarise_at(c("REM_BASICA_BRUTA_DEF", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES_DEF"), mean) %>% 
+  na.omit() %>% 
+  select(CODIGO, NOME, SEXO, CSAP, CSAP_RANK, REM_BASICA_BRUTA_DEF,
+         FERIAS, IRRF, CONT.PREVIDENCIRIA, REM_POS_DEDUCOES_DEF, ANO_SALARIO, CONCLUSAO_GRAD) %>% 
+  mutate(ANO_GRADUACAO = year(CONCLUSAO_GRAD),
+         ANOS_FORMADO = (ANO_SALARIO - ANO_GRADUACAO)) %>% 
+  select(ANO_SALARIO, ANO_GRADUACAO, ANOS_FORMADO, CODIGO, NOME, SEXO,
+         CSAP, CSAP_RANK, REM_BASICA_BRUTA_DEF, REM_POS_DEDUCOES_DEF) %>% 
+  arrange(NOME)
+
+ggplot(data = ml_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF, color = SEXO)) +
+  geom_point(alpha = 1) +
+  geom_smooth(method = "lm") +
+  ylim(0, 20000)
+
+
+a <- cor(ml_dataset$ANOS_FORMADO, ml_dataset$REM_BASICA_BRUTA_DEF)
+
+b <- cor(ml_dataset$ANOS_FORMADO, ml_dataset$REM_POS_DEDUCOES_DEF)
+
+```
+
+### Filter useless variables
+
+Constant variables
+Variables that are in double (for example col1 == col2)
+Variables that are exact bijections (for example col1 = A, B, B, A and col2 = 1, 2, 2, 1)
+```{r}
+
+```
+
+
+### Scaling:
+
+Most machine learning algorithm rather handle scaled data instead of unscaled data. To perform scaling (meaning setting mean to 0 and standard deviation to 1), function fastScale is available. Since it is highly recommended to apply same scaling on train and test, you should compute the scales first using the function build_scales:
+```{r}
+
+```
+
+
+### Encoding categorical
+One thing to do when you are using some machine learning algorithm such as a logistic regression or a neural network is to encode factor variables. One way to do that is to perform one-hot-encoding. For examples:
+```{r}
+encoding <- build_encoding(dataSet = X_train, cols = "auto", verbose = TRUE)
+# This function will enconde every factor/character columns
+# After the creation of the enconding, we can apply them in both dataset
+X_train <- one_hot_encoder(dataSet = X_train, encoding = encoding, drop = TRUE, verbose = TRUE)
+X_test <- one_hot_encoder(dataSet = X_test, encoding = encoding, drop = TRUE, verbose = TRUE)
+
+```
+
+
+### Spliting Train and test
+To avoid introducing a bias in test using train-data, the train-test split should be performed before (most) data preparation steps. To simulate a train and test set we are going to split randomly this data set into 80% train and 20% test.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Creating training and test datasets:
+set.seed(123)
+split  <- initial_split(ml_dataset, prop = 0.7)
+train_dataset <- training(split)
+test_dataset <- testing(split)
+
+g1 <- ggplot(data = train_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF)) +
+  geom_col()
+
+g2 <- ggplot(data = test_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF)) +
+  geom_col()
+
+gridExtra::grid.arrange(g1, g2, ncol = 2)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Beginning of the modeling:
+model <- lm(formula = REM_POS_DEDUCOES_DEF ~ ANOS_FORMADO, data = train_dataset)
+
+summary(model)
+
+income_predicted <- predict(model, test_dataset)
+
+preds <- data.frame(cbind(valores_reais = test_dataset$REM_POS_DEDUCOES_DEF, valores_preditos = income_predicted))
+correlation_accuracy <- cor(preds)
+head(preds, n = 10)
+```
+
+Detecting influential points of the data used in the model building:
+If I have in my data influential points that might skew my model, sometimes unnecessarily. Think of a mistake on the data entry and instead of writing “2.3” the value was “23”. The most common kind of influential point are the outliers, which are data points where the observed response does not appear to follow the pattern established by the rest of the data.
+
+
+```{r}
+
+plot(cooks.distance(modelo), pch = 16, col = "blue") #Plot the Cooks Distances.
+```
+
+### The p Value: Checking for statistical significance
+The summary statistics above tells us a number of things. One of them is the model p-Value (bottom last line) and the p-Value of individual predictor variables (extreme right column under ‘Coefficients’). The p-Values are very important because, We can consider a linear model to be statistically significant only when both these p-Values are less that the pre-determined statistical significance level, which is ideally 0.05. This is visually interpreted by the significance stars at the end of the row. The more the stars beside the variable’s p-Value, the more significant the variable.
+
+#### Null and alternate hypothesis
+When there is a p-value, there is a hull and alternative hypothesis associated with it. In Linear Regression, the Null Hypothesis is that the coefficients associated with the variables is equal to zero. The alternate hypothesis is that the coefficients are not equal to zero (i.e. there exists a relationship between the independent variable in question and the dependent variable).
+
+### R-Squared and Adj R-Squared
+What R-Squared tells us is the proportion of variation in the dependent (response) variable that has been explained by this model.
+
+Now thats about R-Squared. What about adjusted R-Squared? As you add more X variables to your model, the R-Squared value of the new bigger model will always be greater than that of the smaller subset. This is because, since all the variables in the original model is also present, their contribution to explain the dependent variable will be present in the super-set as well, therefore, whatever new variable we add can only add (if not significantly) to the variation that was already explained. It is here, the adjusted R-Squared value comes to help. Adj R-Squared penalizes total value for the number of terms (read predictors) in your model. Therefore when comparing nested models, it is a good practice to look at adj-R-squared value over R-squared.
