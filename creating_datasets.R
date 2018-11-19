@@ -63,7 +63,7 @@ eppggs_df_wrangled$DATA_SALARIO <- ymd(eppggs_df_wrangled$DATA_SALARIO)
 # CREATING THE SECONDARY DATASET (TO BE USED AS LOOKUP TABLE) -----------
 
 lookup_df <- data.frame()
-csap_file <- list.files(pattern = 'csap')
+csap_file <- list.files(pattern = 'csap.xlsx')
 sheets <- excel_sheets("csap.xlsx")
 
 for (i in seq_along(sheets)) {
@@ -78,7 +78,7 @@ for (i in seq_along(sheets)) {
 lookup_df <- lookup_df[-1]
 
 lookup_df <- lookup_df %>% 
-  mutate(CODIGO_ALUNO = c(1:1161))
+  mutate(CODIGO_ALUNO = c(1:nrow(lookup_df)))
 
 real_names <- c("NOME", "INICIO_GRAD", "CONCLUSAO_GRAD", "SEXO", "CSAP_RANK", "CODIGO_ALUNO")
 colnames(lookup_df) <- real_names
@@ -101,7 +101,7 @@ lookup_df <- lookup_df %>%
   select(NOME, CODIGO_ALUNO, SEXO, CSAP_RANK, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
   arrange(CSAP_RANK, NOME)
 
-# Coercing for numeric and transforming excel date format in R date format:
+# Coercing for numeric and transforming look date format in R date format:
 lookup_df$INICIO_GRAD <- as.numeric(lookup_df$INICIO_GRAD)
 lookup_df$CONCLUSAO_GRAD <- as.numeric(lookup_df$CONCLUSAO_GRAD)
 lookup_df$INICIO_GRAD <- as.Date(lookup_df$INICIO_GRAD, origin = "1899-12-30")
