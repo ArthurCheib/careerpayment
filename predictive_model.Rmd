@@ -24,26 +24,23 @@ Creating the dataset that will be splitted into training and test set.
 ml_dataset <- eppggs_dataset %>%
   filter(CSAP != "CSAP 30",
          CSAP != "CSAP 31") %>%
-  mutate(REM_POS_DEDUCOES_DEF = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "10/2018", "ipca"), digits = 2),
-         REM_BASICA_BRUTA_DEF = round(deflate(REM_BASICA_BRUTA, DATA_SALARIO, "10/2018", "ipca"), digits = 2)) %>% 
-  group_by(ANO_SALARIO, CODIGO, NOME, CSAP, CSAP_RANK, SEXO, CONCLUSAO_GRAD) %>% 
-  summarise_at(c("REM_BASICA_BRUTA_DEF", "FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES_DEF"), mean) %>% 
+  mutate(REM_POS_DEDUCOES_DEF = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "10/2018", "ipca"), digits = 2)) %>% 
+  group_by(ANO_SALARIO, CODIGO, SEXO, CONCLUSAO_GRAD) %>% 
+  summarise_at(c("FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES_DEF"), mean) %>% 
   na.omit() %>% 
-  select(CODIGO, NOME, SEXO, CSAP, CSAP_RANK, REM_BASICA_BRUTA_DEF,
+  select(CODIGO, SEXO,
          FERIAS, IRRF, CONT.PREVIDENCIRIA, REM_POS_DEDUCOES_DEF, ANO_SALARIO, CONCLUSAO_GRAD) %>% 
   mutate(ANO_GRADUACAO = year(CONCLUSAO_GRAD),
-         ANOS_FORMADO = (ANO_SALARIO - ANO_GRADUACAO)) %>% 
-  select(ANO_SALARIO, ANO_GRADUACAO, ANOS_FORMADO, CODIGO, NOME, SEXO,
-         CSAP, CSAP_RANK, REM_BASICA_BRUTA_DEF, REM_POS_DEDUCOES_DEF) %>% 
-  arrange(NOME)
+         ANOS_FORMADO = (ANO_SALARIO - ANO_GRADUACAO),
+         SEXO_2 = case_when(SEXO == "FEMININO" ~ 0,
+                          SEXO == "MASCULINO" ~ 1)) %>% 
+  select(ANOS_FORMADO, CODIGO, -SEXO, SEXO_2, REM_POS_DEDUCOES_DEF) %>%
+  arrange(CODIGO)
 
 ggplot(data = ml_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF, color = SEXO)) +
   geom_point(alpha = 1) +
   geom_smooth(method = "lm") +
   ylim(0, 20000)
-
-
-a <- cor(ml_dataset$ANOS_FORMADO, ml_dataset$REM_BASICA_BRUTA_DEF)
 
 b <- cor(ml_dataset$ANOS_FORMADO, ml_dataset$REM_POS_DEDUCOES_DEF)
 

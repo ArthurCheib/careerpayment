@@ -12,6 +12,7 @@ library(data.table)
 library(deflateBR)
 library(scales)
 library(ggthemes)
+library(broom)
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
