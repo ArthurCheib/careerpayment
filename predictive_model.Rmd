@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(broom)
+library(dummies)
+library(dummy)
 library(rsample)
 ```
 
@@ -22,8 +24,7 @@ Creating the dataset that will be splitted into training and test set.
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 ml_dataset <- eppggs_dataset %>%
-  filter(CSAP != "CSAP 30",
-         CSAP != "CSAP 31") %>%
+  filter(CSAP != "CSAP 31") %>%
   mutate(REM_POS_DEDUCOES_DEF = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "10/2018", "ipca"), digits = 2)) %>% 
   group_by(ANO_SALARIO, CODIGO, SEXO, CONCLUSAO_GRAD) %>% 
   summarise_at(c("FERIAS", "IRRF", "CONT.PREVIDENCIRIA", "REM_POS_DEDUCOES_DEF"), mean) %>% 
@@ -45,6 +46,28 @@ ggplot(data = ml_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF, color 
 b <- cor(ml_dataset$ANOS_FORMADO, ml_dataset$REM_POS_DEDUCOES_DEF)
 
 ```
+
+Second try for datset:
+```{r}
+ml_eppgg_dataset <- eppggs_dataset %>%
+  filter(CSAP != "CSAP 31") %>%
+  na.omit() %>% 
+  mutate(REM_BASICA_BRUTA_DEF = round(deflate(REM_BASICA_BRUTA, DATA_SALARIO, "10/2018", "ipca"), digits = 2),
+         ANOS_FORMADO = round(as.duration(CONCLUSAO_GRAD %--% DATA_SALARIO)/dyears(1), digits = 1),
+         SEXO = factor(SEXO, levels = c("MASCULINO", "FEMININO")),
+         CARGO = factor(CARGO, levels = c("COM CARGO", "SEM CARGO"))) %>% 
+  select(SEXO, CARGO, REM_BASICA_BRUTA_DEF, ANOS_FORMADO) %>%
+  cbind(., as.data.frame(dummies::dummy(ml_eppgg_dataset$SEXO))) %>% 
+  cbind(., as.data.frame(dummies::dummy(ml_eppgg_dataset$CARGO)))
+
+real_names <- c("SEXO", "CARGO", "REM_BRUTA", "ANOS_FORMADO", "SEXO_MASCULINO", "SEXO_FEMININO", "COM_CARGO", "SEM_CARGO")
+colnames(ml_eppgg_dataset) <- real_names
+
+
+ml_eppgg_dataset <- ml_eppgg_dataset %>% 
+  select(-SEXO, -CARGO)
+```
+
 
 ### Filter useless variables
 
@@ -82,14 +105,14 @@ To avoid introducing a bias in test using train-data, the train-test split shoul
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #Creating training and test datasets:
 set.seed(123)
-split  <- initial_split(ml_dataset, prop = 0.7)
+split  <- initial_split(ml_eppgg_dataset, prop = 0.7)
 train_dataset <- training(split)
 test_dataset <- testing(split)
 
-g1 <- ggplot(data = train_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF)) +
+g1 <- ggplot(data = train_dataset, aes(x = ANOS_FORMADO, y = REM_BRUTA)) +
   geom_col()
 
-g2 <- ggplot(data = test_dataset, aes(x = ANOS_FORMADO, y = REM_POS_DEDUCOES_DEF)) +
+g2 <- ggplot(data = test_dataset, aes(x = ANOS_FORMADO, y = REM_BRUTA)) +
   geom_col()
 
 gridExtra::grid.arrange(g1, g2, ncol = 2)
@@ -98,13 +121,13 @@ gridExtra::grid.arrange(g1, g2, ncol = 2)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Beginning of the modeling:
-model <- lm(formula = REM_POS_DEDUCOES_DEF ~ ANOS_FORMADO, data = train_dataset)
+model <- lm(formula = REM_BRUTA ~ ANOS_FORMADO + COM_CARGO, data = train_dataset)
 
 summary(model)
 
 income_predicted <- predict(model, test_dataset)
 
-preds <- data.frame(cbind(valores_reais = test_dataset$REM_POS_DEDUCOES_DEF, valores_preditos = income_predicted))
+preds <- data.frame(cbind(valores_reais = test_dataset$REM_BRUTA, valores_preditos = income_predicted))
 correlation_accuracy <- cor(preds)
 head(preds, n = 10)
 ```
