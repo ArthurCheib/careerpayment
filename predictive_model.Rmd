@@ -6,11 +6,18 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 library(broom)
 library(dummies)
 library(dummy)
 library(rsample)
+library(tidyverse)
+library(lubridate)
+library(deflateBR)
 ```
 
 Para acessar do meu PC:

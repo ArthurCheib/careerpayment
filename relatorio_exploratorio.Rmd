@@ -110,7 +110,6 @@ eppggs_dataset %>%
   ggplot(aes(VALORES, fct_reorder(CSAP, CSAP_RANK, .desc = T))) +
   geom_line(aes(group = CSAP)) +
   geom_point(aes(color = INDICADORES), size = 2.5)
-  
 ```
 
 

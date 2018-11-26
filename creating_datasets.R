@@ -155,4 +155,27 @@ eppggs_dataset <- eppggs_df_final %>%
          "REM_POS_DEDUCOES", "DATA_SALARIO", "INICIO_GRAD", "CONCLUSAO_GRAD", "ANO_SALARIO")
   
 
+eppggs_dataset <- eppggs_dataset %>% 
+  mutate(GRUPO_ORGAO = case_when(ORGAO_ENTIDADE == "DEFESA SOCIAL" ~ "SEGURANCA PUBLICA",
+                                 ORGAO_ENTIDADE == "ADMINISTRACAO PRISIONAL" ~ "SEGURANCA PUBLICA",
+                                 ORGAO_ENTIDADE == "POLICIA CIVIL"  ~ "SEGURANCA PUBLICA",
+                                 ORGAO_ENTIDADE == "SEGURANCA PUBLICA" ~ "SEGURANCA PUBLICA",
+                                 ORGAO_ENTIDADE == "SECRETARIA DE ESTADO DE CIENCIA TECNOLOGIA" ~ "EDUCACAO",
+                                 ORGAO_ENTIDADE == "UEMG-UNIV.EST. DE MINAS GERAIS" ~ "EDUCACAO",
+                                 ORGAO_ENTIDADE == "SECRETARIA DE EDUCACAO" ~ "EDUCACAO",
+                                 ORGAO_ENTIDADE == "SECRETARIA DE SAUDE" ~ "SAUDE",
+                                 ORGAO_ENTIDADE == "ESCOLA DE SAUDE" ~ "SAUDE",
+                                 ORGAO_ENTIDADE == "FHEMIG FUND HOSPITALAR EST MG" ~ "SAUDE",
+                                 ORGAO_ENTIDADE == "FUNDACAO HEMOMINAS" ~ "SAUDE",
+                                 ORGAO_ENTIDADE == "SEC. DE PLANEJAMENTO E GESTAO" ~ "PLANEJAMENTO E GESTAO",
+                                 ORGAO_ENTIDADE == "SEC. DESENVOLVIMENTO ECONOMICO" ~ "DESENVOLVIMENTO ECONOMICO",
+                                 ORGAO_ENTIDADE == "SECRETARIA DA FAZENDA" ~ "DESENVOLVIMENTO ECONOMICO",
+                                 ORGAO_ENTIDADE == "SEC ESTADO DESENVOLVIMENTO ECONOMICO CIENCIA TECNOLOGIA" ~ "DESENVOLVIMENTO ECONOMICO",
+                                 ORGAO_ENTIDADE == "SEC DE ESTADO DE DIREITOS HUMANOS PARTICIPACAO SOCIAL E CIDADANIA" ~ "DESENVOLVIMENTO SOCIAL",
+                                 ORGAO_ENTIDADE == "SEC. DESENV.SOCIAL" ~ "DESENVOLVIMENTO SOCIAL",
+                                 ORGAO_ENTIDADE == "SECRETARIA DE ESTADO DE TRABALHO E EMPREGO" ~ "DESENVOLVIMENTO SOCIAL",
+                                 ORGAO_ENTIDADE == "SECRETARIA DE ESTADO DE DESENVOLVIMENTO AGRARIO" ~ "DESENVOLVIMENTO SOCIAL",
+                                 ORGAO_ENTIDADE == "FUNDACAO JOAO PINHEIRO" ~ "FUNDACAO JOAO PINHEIRO",
+                                 TRUE ~ "OUTROS"))
+
 save(... = eppggs_dataset, file = "eppggs_dataset.RData")
