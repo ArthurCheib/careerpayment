@@ -27,7 +27,9 @@ load("eppggs_dataset.RData")
 load("csap_dataset.RData")
 ```
 
-Creating the dataset that will be splitted into training and test set.
+# FIRST MODEL
+
+First try (not enough)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 ml_dataset <- eppggs_dataset %>%
@@ -54,57 +56,28 @@ b <- cor(ml_dataset$ANOS_FORMADO, ml_dataset$REM_POS_DEDUCOES_DEF)
 
 ```
 
-Second try for datset:
+Dataset for the model_lr1, 
 ```{r}
-ml_eppgg_dataset <- eppggs_dataset %>%
+model_df_lr1 <- eppggs_dataset %>%
   filter(CSAP != "CSAP 31") %>%
   na.omit() %>% 
   mutate(REM_BASICA_BRUTA_DEF = round(deflate(REM_BASICA_BRUTA, DATA_SALARIO, "10/2018", "ipca"), digits = 2),
          ANOS_FORMADO = round(as.duration(CONCLUSAO_GRAD %--% DATA_SALARIO)/dyears(1), digits = 1),
          SEXO = factor(SEXO, levels = c("MASCULINO", "FEMININO")),
          CARGO = factor(CARGO, levels = c("COM CARGO", "SEM CARGO"))) %>% 
-  select(SEXO, CARGO, REM_BASICA_BRUTA_DEF, ANOS_FORMADO) %>%
-  cbind(., as.data.frame(dummies::dummy(ml_eppgg_dataset$SEXO))) %>% 
-  cbind(., as.data.frame(dummies::dummy(ml_eppgg_dataset$CARGO)))
+  select(SEXO, CARGO,REM_BASICA_BRUTA_DEF, ANOS_FORMADO, GRUPO_ORGAO)
 
-real_names <- c("SEXO", "CARGO", "REM_BRUTA", "ANOS_FORMADO", "SEXO_MASCULINO", "SEXO_FEMININO", "COM_CARGO", "SEM_CARGO")
-colnames(ml_eppgg_dataset) <- real_names
+model_df_lr1 <- model_df_lr1 %>% 
+  cbind(as.data.frame(dummies::dummy(model_df_lr1$SEXO))) %>% 
+  cbind(as.data.frame(dummies::dummy(model_df_lr1$CARGO))) %>% 
+  cbind(as.data.frame(dummies::dummy(model_df_lr1$GRUPO_ORGAO)))
+    
+model_df_lr1 <- model_df_lr1 %>% 
+  select(REM_BASICA_BRUTA_DEF, ANOS_FORMADO, `CARGO)))MASCULINO`, `CARGO)))COM CARGO`, `CARGO)))DESENVOLVIMENTO ECONOMICO`, `CARGO)))DESENVOLVIMENTO SOCIAL`, `CARGO)))EDUCACAO`, `CARGO)))FUNDACAO JOAO PINHEIRO`, `CARGO)))OUTROS`, `CARGO)))PLANEJAMENTO E GESTAO`, `CARGO)))SAUDE`, `CARGO)))SEGURANCA PUBLICA`)
 
-
-ml_eppgg_dataset <- ml_eppgg_dataset %>% 
-  select(-SEXO, -CARGO)
+real_names <- c("REM_BRUTA", "ANOS_FORMADO", "SEXO", "CARGO", "D_ECONOMICO", "D_SOCIAL", "EDUCACAO", "FJP", "OUTROS", "PLANEJAMENTO", "SAUDE", "SEG_PUBLICA")
+colnames(model_df_lr1) <- real_names
 ```
-
-
-### Filter useless variables
-
-Constant variables
-Variables that are in double (for example col1 == col2)
-Variables that are exact bijections (for example col1 = A, B, B, A and col2 = 1, 2, 2, 1)
-```{r}
-
-```
-
-
-### Scaling:
-
-Most machine learning algorithm rather handle scaled data instead of unscaled data. To perform scaling (meaning setting mean to 0 and standard deviation to 1), function fastScale is available. Since it is highly recommended to apply same scaling on train and test, you should compute the scales first using the function build_scales:
-```{r}
-
-```
-
-
-### Encoding categorical
-One thing to do when you are using some machine learning algorithm such as a logistic regression or a neural network is to encode factor variables. One way to do that is to perform one-hot-encoding. For examples:
-```{r}
-encoding <- build_encoding(dataSet = X_train, cols = "auto", verbose = TRUE)
-# This function will enconde every factor/character columns
-# After the creation of the enconding, we can apply them in both dataset
-X_train <- one_hot_encoder(dataSet = X_train, encoding = encoding, drop = TRUE, verbose = TRUE)
-X_test <- one_hot_encoder(dataSet = X_test, encoding = encoding, drop = TRUE, verbose = TRUE)
-
-```
-
 
 ### Spliting Train and test
 To avoid introducing a bias in test using train-data, the train-test split should be performed before (most) data preparation steps. To simulate a train and test set we are going to split randomly this data set into 80% train and 20% test.
@@ -112,7 +85,7 @@ To avoid introducing a bias in test using train-data, the train-test split shoul
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #Creating training and test datasets:
 set.seed(123)
-split  <- initial_split(ml_eppgg_dataset, prop = 0.7)
+split  <- initial_split(model_df_lr1, prop = 0.8)
 train_dataset <- training(split)
 test_dataset <- testing(split)
 
@@ -125,23 +98,94 @@ g2 <- ggplot(data = test_dataset, aes(x = ANOS_FORMADO, y = REM_BRUTA)) +
 gridExtra::grid.arrange(g1, g2, ncol = 2)
 ```
 
+Creating the data frame for comparation
+```{r}
+modelMetrics <- data.frame( "Model" = character(), "adjRsq" = integer(),  "AIC"= integer(), "BIC"= integer(), "Mean Prediction Error"= integer(), "Standard Error"= integer(), stringsAsFactors=FALSE)
+```
 
+Running the first model with variables income explained by years
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-# Beginning of the modeling:
-model <- lm(formula = REM_BRUTA ~ ANOS_FORMADO + COM_CARGO, data = train_dataset)
+# Beginning of the modeling number ONE:
+model_lr1 <- lm(formula = REM_BRUTA ~ ANOS_FORMADO, data = train_dataset)
 
-summary(model)
+summary(model_lr1)
 
-income_predicted <- predict(model, test_dataset)
+income_predicted <- predict(model_lr1, test_dataset)
 
 preds <- data.frame(cbind(valores_reais = test_dataset$REM_BRUTA, valores_preditos = income_predicted))
 correlation_accuracy <- cor(preds)
 head(preds, n = 10)
+
+# Inserting erros parameters for this model with these variables:
+aic <- round(AIC(model_lr1), digits = 4)
+bic <- round(BIC(model_lr1), digits = 4)
+
+
+pred_model_lr1 <- predict(model_lr1, newdata = test_dataset) # validation predictions
+meanPred <- round(mean((test_dataset$REM_BRUTA - pred_model_lr1)^2), digits = 4) # mean prediction error
+stdError <- round(sd((test_dataset$REM_BRUTA - pred_model_lr1)^2)/length(test_dataset$REM_BRUTA), digits = 4)
+
+modelMetrics[nrow(modelMetrics) + 1, ] <- c( "model_lr1", 0.7025, aic, bic, meanPred, stdError)
 ```
+
+Running the first model with variables income explained by years + job position
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Beginning of the modeling number TWO:
+model_lr2 <- lm(formula = REM_BRUTA ~ ANOS_FORMADO + CARGO, data = train_dataset)
+
+summary(model_lr2)
+
+income_predicted <- predict(model_lr2, test_dataset)
+
+preds <- data.frame(cbind(valores_reais = test_dataset$REM_BRUTA, valores_preditos = income_predicted))
+correlation_accuracy <- cor(preds)
+head(preds, n = 10)
+
+# Inserting erros parameters for this model with these variables:
+aic <- round(AIC(model_lr2), digits = 4)
+bic <- round(BIC(model_lr2), digits = 4)
+
+
+pred_model_lr2 <- predict(model_lr2, newdata = test_dataset) # validation predictions
+meanPred <- round(mean((test_dataset$REM_BRUTA - pred_model_lr2)^2), digits = 4) # mean prediction error
+stdError <- round(sd((test_dataset$REM_BRUTA - pred_model_lr2)^2)/length(test_dataset$REM_BRUTA), digits = 4)
+
+modelMetrics[nrow(modelMetrics) + 1, ] <- c( "model_lr2", 0.7535, aic, bic, meanPred, stdError)
+```
+
+Running the first model with variables income explained by years + job position + sex
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Beginning of the modeling number TWO:
+model_lr3 <- lm(formula = REM_BRUTA ~ ANOS_FORMADO + CARGO + SEXO, data = train_dataset)
+
+summary(model_lr3)
+
+income_predicted <- predict(model_lr3, test_dataset)
+
+preds <- data.frame(cbind(valores_reais = test_dataset$REM_BRUTA, valores_preditos = income_predicted))
+correlation_accuracy <- cor(preds)
+head(preds, n = 10)
+
+# Inserting erros parameters for this model with these variables:
+aic <- round(AIC(model_lr3), digits = 4)
+bic <- round(BIC(model_lr3), digits = 4)
+
+
+pred_model_lr3 <- predict(model_lr3, newdata = test_dataset) # validation predictions
+meanPred <- round(mean((test_dataset$REM_BRUTA - pred_model_lr3)^2), digits = 4) # mean prediction error
+stdError <- round(sd((test_dataset$REM_BRUTA - pred_model_lr3)^2)/length(test_dataset$REM_BRUTA), digits = 4)
+
+modelMetrics[nrow(modelMetrics) + 1, ] <- c( "model_lr3", 0.7539, aic, bic, meanPred, stdError)
+```
+
+Checking the results:
+```{r}
+modelMetrics
+```
+
 
 Detecting influential points of the data used in the model building:
 If I have in my data influential points that might skew my model, sometimes unnecessarily. Think of a mistake on the data entry and instead of writing “2.3” the value was “23”. The most common kind of influential point are the outliers, which are data points where the observed response does not appear to follow the pattern established by the rest of the data.
-
 
 ```{r}
 
