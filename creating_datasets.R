@@ -5,11 +5,18 @@ library(lubridate)
 
 # CREATING THE MAIN DATASET ------------------------------
 
-setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
+## For the purpose of creating the dataset that is going to be used all along the project we did three things:
+
+# 1) Collected all the payment data avaiable on the "Portal da Transparência MG".
+# 2) Collected all the public data about the "Fundação João Pinheiro" alumni that could be shared by this institution.
+# 3) Cleaned both dataset in the sequence presented bellow and then joined then:
+
+setwd("C:/Users/arthu/OneDrive/Trabalho_SEE/Datasets/pay_servidores")
 eppggs_df <- data.frame()
-#2setwd("C:\\Users\\m7531338\\OneDrive\\Trabalho SEE\\Datasets\\pay_servidores")
 all_files <- list.files(path = getwd(), pattern = '.csv')
-all_files <- all_files[-c(61,62)]
+
+### This dataset contains the payment for all the Minas Gerais state careers, but we select only the interest group,
+### which is the EPPGG career.
 
 for (i in seq_along(all_files)) {
   
@@ -31,17 +38,16 @@ colnames(eppggs_df) <- real_cols_names
 eppggs_df[c(1, 9:21)] <- map_df(eppggs_df[c(1, 9:21)], str_replace, "\\,", "\\.")
 eppggs_df[c(1, 9:21)] <- map_df(eppggs_df[c(1, 9:21)], as.numeric)
 
-# Removing errors within the name columns (when loading the data it arose)
+# Removing errors within the name columns (when loading the data it arose) - as a name columns it should contain only letters.
 temp_01 <- which(str_detect(eppggs_df$NOME, "\\d"))
 eppggs_df <- eppggs_df[-temp_01, ]
 
-#Removing "acentos" for preparing the data to be joined (let it equal to the lookup_df)
+#Removing "acentos" for preparing the data to be joined (making it equal to the lookup_df)
 eppggs_df$NOME <- map_chr(eppggs_df$NOME, iconv, from="UTF-8",to="ASCII//TRANSLIT")
-
 
 # LAST WRANGLING FOR THE FINAL ARRANGE
 
-# Separating last column into three and removing two other columns (this line should have come earlier). --
+# Separating last column into three cols and removing two other ones.
 eppggs_df_wrangled <- eppggs_df %>% 
   separate(ANO, c("ANO", "MES"), "_") %>% 
   separate(MES, c("MES", "DIA"), "\\.") %>%
@@ -59,8 +65,9 @@ eppggs_df_wrangled <- eppggs_df_wrangled %>%
 eppggs_df_wrangled$DATA_SALARIO <- ymd(eppggs_df_wrangled$DATA_SALARIO)
 
 
-
 # CREATING THE SECONDARY DATASET (TO BE USED AS LOOKUP TABLE) -----------
+
+## This dataset consists in the public variables requested to the Fundação João Pinheiro.
 
 lookup_df <- data.frame()
 csap_file <- list.files(pattern = 'csap.xlsx')
@@ -93,11 +100,8 @@ to_be_removed <- c("DESLIGADO", "DESLIGADO EM 04/02/2013", "DESLIGADO EM 13/05/2
                    "DISCPLINAS PENDENTES EM CURSO", NA, "DESLIGADA",
                    "1º/04/2008", "DESSITENTE", "DESISTENTE")
 
-# Creating function to be the "not in" verb:
-`%!in%` = Negate(`%in%`)
-
 lookup_df <- lookup_df %>% 
-  filter(CONCLUSAO_GRAD %!in% to_be_removed) %>% 
+  filter(!CONCLUSAO_GRAD %in% to_be_removed) %>% 
   select(NOME, CODIGO_ALUNO, SEXO, CSAP_RANK, INICIO_GRAD, CONCLUSAO_GRAD) %>% 
   arrange(CSAP_RANK, NOME)
 
@@ -108,18 +112,21 @@ lookup_df$INICIO_GRAD <- as.Date(lookup_df$INICIO_GRAD, origin = "1899-12-30")
 lookup_df$CONCLUSAO_GRAD <- as.Date(lookup_df$CONCLUSAO_GRAD, origin = "1899-12-30")
 
 
-#Remoção de alunos com conclusão de curso em duas datas diferentes (uma para sua turma oriinal e outra na turma com a qual concluiu)
+# Removing names that appears for more then one class (picked the entry class)
 duplicados_nome <- which(duplicated(lookup_df$NOME))
 
-grad_duplicada <- lookup_df %>% filter(NOME %in% lookup_df[c(910, 920), 1]) %>% select(CODIGO_ALUNO) %>% slice(c(3,4))
+grad_duplicada <- lookup_df %>%
+  filter(NOME %in% lookup_df[duplicados_nome, 1]) %>%
+  select(CODIGO_ALUNO) %>%
+  slice(c(3,4))
 
 lookup_df <- lookup_df %>% 
-  filter(CODIGO_ALUNO %!in% grad_duplicada$CODIGO_ALUNO)
+  filter(!CODIGO_ALUNO %in% grad_duplicada$CODIGO_ALUNO)
 
-# Joining lookup df with the main dataset for forging the Final Dataset for analysis
+# Joining lookup df with the main dataset for creating the Final Dataset for analysis
 eppggs_df_final <- left_join(eppggs_df_wrangled, lookup_df, by = "NOME")
 
-#Final adjustments:
+#Final adjustments -removing unnecessary columns:
 eppggs_df_final <- eppggs_df_final[-c(3,4)]
 
 eppggs_df_final <- eppggs_df_final %>% 
@@ -129,7 +136,7 @@ rm(eppggs_df, lookup_df, eppggs_df_wrangled, all_files, csap_file, real_cols_nam
    real_names, sheets, temp_01, to_be_removed, i)
 
 
-# Deduplicação dos locais de trabalho ----------------------------------------------
+# Removing duplicated workplaces and merging names into one big area of work
 all_places <- eppggs_df_final %>% count(ORGAO_ENTIDADE)
 
 eppggs_dataset <- eppggs_df_final %>% 
