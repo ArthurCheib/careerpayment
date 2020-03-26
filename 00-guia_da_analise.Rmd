@@ -1,0 +1,74 @@
+---
+title: "Sumário-executivo da Proposta de Análise"
+author: "Arthur Cheib"
+date: "26/03/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+```
+
+## Objetivo da Análise
+
+Esta breve análise tem por objetivo dar a conhecer um pouco mais da carreira de EPPGG - [Especialista em Políticas Públicas e Gestão Governamental](http://novosite.fjp.mg.gov.br/graduacao/) - criada dentro do Poder Executivo de Minas Gerais como consequência prática de uma proposta de profissionalização da gestão pública. Tentando conhecer um pouco mais sobre o universo da Ciências do Dados, tenho me deparado, constantemente, com o mesmo conselho: "escolha um conjunto de dados que lhe interesse e brinque com ele". Essa é a segunda motivação para esse estudo (talvez, a mais real).
+
+## Divisão da História
+
+A forma que encontrei, para melhor dividir as tarefas da análise, foi segmentá-la em três fases.
+
+Na primeira, tento criar o melhor conjunto de dados dados possível - para que todo o trabalho possa ser realizado apenas com um dataset, o que facilita muito - após tratamento dos dados disponíveis no [Portal da Transparência de Minas Gerais](http://www.transparencia.mg.gov.br/dados-abertos) e imputação de algumas variáveis faltantes.
+
+Na segunda fase, tento realizar uma análise exploratória de dados guiada por perguntas obtidas atráves de algumas conversas com amigos e também da minha própria curiosidade.
+
+Por último, tento fazer uma breve modelagem de dados a fim de responder qual seria o possível impacto, em diferentes cenários, de um aumento no salários dos eppggs na folha salarial do governo.
+
+## Design da Análise
+
+Os principais passos que pretendo seguir para concluir a análise são: 
+
+### Obtenção de dados
+
+Como disse anteriormente, cuidei de obter os dados do Portal da Transparência de Minas Gerais. Apesar de serem públicos, tratei de apresentá-los apenas de forma sumarizada, de forma que não haja possibilidade de identificação de nenhum servidor em específico, ativo ou inativo.
+
+### Tratamento dos dados
+
+O tratamento de dados obedece a diferentes regras - todas elas registradas no próprio arquivo dedicado a análise. Vale, no entanto, notificar que o dado de sexo foi imputado atráves do uso do pacote [genderBR](https://github.com/meirelesff/genderBR), desenvolvido por pesquisadores da Universidade Federal de Minas Gerais. Basicamente, ele prediz o sexo com base no nome imputado, caso este mesmo nome apareça mais de 60% (o threshold do pacote é de 90% - 0.9 - no entanto utilizei o valor de 0.6 ) como atrelado a um determinado sexo no Censo Brasileiro de 2010.
+
+### Análise exploratória de dados - visualização
+
+Perguntas que pretendi responder com a AED inicial do conjunto de dados:
+
+*1) Análise univariada*
+
+  1.1) *Sobre salário*
+    1.1.1) Qual o salário bruto médio de um eppgg?
+    1.1.2) Como estão distribuídos os eppggs dentro de uma faixa salarial?
+    1.1.3) 
+  
+  1.2) *Sobre perfil*
+    1.2.1) Qual a distribuição de epppgs por sexo?
+    1.2.2) Qual o percetual de abandono de carreira pelos eppggs nos últimos sete anos?
+            
+  1.3) *Sobre cargos*
+    1.3.1) Como estão distribuídos os cargos entre a carreira dos eppggs?
+    1.3.2) Predominam os DADs ou FGDs?
+    1.3.3) 
+  
+  1.4) *Sobre Secretaria de atuação*
+    1.4.1) Em quais secretarias estão distribuídos os eppggs?
+    1.4.2) Como se deu a troca de secretarias por eppggs nos últimos sete anos?
+  
+
+*2) Análise bivariada*
+
+  2.1) Qual a relação entre o salário médio de um eppgg e o sexo?
+  2.2) Qual a relação entre o saládio de um eppgg e o tempo de carreira?
+  2.3) Qual a distribuição do salário entre grupos de novos entrantes?
+  2.4) A evasão ocorrida nos últimos 7 anos foi mais frequente em algum período ou para alguma faixa salarial?
+  2.5) Em qual secretaria houve maior predominância de EPPGGs com cargos (FGD ou DAD)?
+  2.6) Qual o tempo médio para um eppgg recém formado assumir um cargo - por secretaria?
+  
+  
