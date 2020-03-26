@@ -1,10 +1,13 @@
 ---
-title: "Salários EPPPGG - Análise Exploratória"
+title: "Exploratory Data Analysis - EPPGG Career"
 author: "Arthur Silva Cheib - EPPGG"
 output: github_document
 ---
 
 ```{r include=FALSE}
+
+## Packages needed:
+
 library(tidyverse)
 library(readxl)
 library(lubridate)
@@ -16,12 +19,15 @@ library(broom)
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-setwd("C:/Users/arthu/OneDrive/Trabalho SEE/Datasets/pay_servidores")
+
+## Loading datasets created by the 01-file.
+
 load("eppggs_dataset.RData")
 load("csap_dataset.RData")
 ```
 
-Total de graduados na FJP - ano a ano
+Guide of the Work:
+
 ```{r fig.width=9, fig.height=5}
 lookup_df %>%
   mutate(CSAP = str_c("CSAP ", CSAP_RANK),
@@ -213,7 +219,7 @@ ANOS_FORMADO = round(abs(as.duration(ANO_SALARIO %--% ANO_GRADUACAO)/dyears(1)),
 * d. Qual foi o tempo médio gasto por um csapiano para assumir um cargo em até 02 anos ()
 
 ## Quebrar a análise por CSAP:
-* Proporcionalmente, quanl CSAP tem hoje o melhor desempenho em:
+Proporcionalmente, qual CSAP tem hoje o melhor desempenho em:
 * Permanência na carreira (prop. de quantos entraram e quantos saíram)
 * Desempenho salarial global
 * Rising stars (maior quantidade de cargos ou prop de csapianos com cargos)
@@ -222,8 +228,4 @@ ANOS_FORMADO = round(abs(as.duration(ANO_SALARIO %--% ANO_GRADUACAO)/dyears(1)),
 * Principal secretaria em que estão alocados
 * Fluxo ao longo de 2013 - 2018 entre secretarias
 * Fluxo entrada e saída de EPPGGS's na carreira
-
-
-# Problema do código com o caso dos csap que não foi possível encontrar o CSAP (galera do concurso)
-
         
