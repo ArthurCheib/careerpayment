@@ -19,7 +19,7 @@ Esta breve análise tem por objetivo dar a conhecer um pouco mais da carreira de
 
 A forma que encontrei, para melhor dividir as tarefas da análise, foi segmentá-la em três fases.
 
-Na primeira, tento criar o melhor conjunto de dados dados possível - para que todo o trabalho possa ser realizado apenas com um dataset, o que facilita muito - após tratamento dos dados disponíveis no [Portal da Transparência de Minas Gerais](http://www.transparencia.mg.gov.br/dados-abertos) e imputação de algumas variáveis faltantes.
+Na primeira, tento criar o melhor conjunto de dados dados possível - para que todo o trabalho possa ser realizado apenas com um dataset, o que facilita muito - através do tratamento dos dados disponíveis no [Portal da Transparência de Minas Gerais](http://www.transparencia.mg.gov.br/dados-abertos) e a realizaçaõ de uma imputação de algumas variáveis faltantes.
 
 Na segunda fase, tento realizar uma análise exploratória de dados guiada por perguntas obtidas atráves de algumas conversas com amigos e também da minha própria curiosidade.
 
@@ -35,7 +35,7 @@ Como disse anteriormente, cuidei de obter os dados do Portal da Transparência d
 
 ### Tratamento dos dados
 
-O tratamento de dados obedece a diferentes regras - todas elas registradas no próprio arquivo dedicado a análise. Vale, no entanto, notificar que o dado de sexo foi imputado atráves do uso do pacote [genderBR](https://github.com/meirelesff/genderBR), desenvolvido por pesquisadores da Universidade Federal de Minas Gerais. Basicamente, ele prediz o sexo com base no nome imputado, caso este mesmo nome apareça mais de 60% (o threshold do pacote é de 90% - 0.9 - no entanto utilizei o valor de 0.6 ) como atrelado a um determinado sexo no Censo Brasileiro de 2010.
+O tratamento de dados obedece a diferentes regras - todas elas registradas no próprio arquivo dedicado a análise. Vale, no entanto, notificar que o dado de sexo foi imputado atráves do uso do pacote [genderBR](https://github.com/meirelesff/genderBR), desenvolvido por pesquisadores da Universidade Federal de Minas Gerais. Basicamente, ele prediz o sexo com base no nome imputado, caso este mesmo nome apareça mais de 60% (o threshold do pacote é de 90% - 0.9 - no entanto utilizei o valor de 0.6) como atrelado a um determinado sexo no Censo Brasileiro de 2010.
 
 ### Análise exploratória de dados - visualização
 
@@ -46,8 +46,7 @@ Perguntas que pretendi responder com a AED inicial do conjunto de dados:
   1.1) *Sobre salário*
     1.1.1) Qual o salário bruto médio de um eppgg?
     1.1.2) Como estão distribuídos os eppggs dentro de uma faixa salarial?
-    1.1.3) 
-  
+    
   1.2) *Sobre perfil*
     1.2.1) Qual a distribuição de epppgs por sexo?
     1.2.2) Qual o percetual de abandono de carreira pelos eppggs nos últimos sete anos?
@@ -55,7 +54,6 @@ Perguntas que pretendi responder com a AED inicial do conjunto de dados:
   1.3) *Sobre cargos*
     1.3.1) Como estão distribuídos os cargos entre a carreira dos eppggs?
     1.3.2) Predominam os DADs ou FGDs?
-    1.3.3) 
   
   1.4) *Sobre Secretaria de atuação*
     1.4.1) Em quais secretarias estão distribuídos os eppggs?
