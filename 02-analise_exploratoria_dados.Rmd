@@ -16,113 +16,225 @@ library(deflateBR)
 library(scales)
 library(ggthemes)
 library(broom)
-```
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
+library(hrbrthemes)
+library(genderBR)
+library(wesanderson)
 
 ## Loading datasets created by the 01-file.
 
 load("eppggs_dataset.RData")
-load("csap_dataset.RData")
+
+eppggs_dataset <- eppggs_dataset %>% 
+  as_tibble()
 ```
 
-Guide of the Work:
+## 1. Guia do Trabalho
+
+Como mencionado no arquivo 00, a análise exploratória de dados será divida em dois momentos e, em cada um deles, as seguintes perguntas tentarão ser respondidas:
+
+*Fase 1: perguntas iniciais*
+
+  1.1) *Sobre salário*
+    1.1.1) Qual o salário bruto médio de um eppgg?
+    1.1.2) Como estão distribuídos os eppggs dentro de uma faixa salarial?
+    
+  1.2) *Sobre perfil*
+    1.2.1) Qual a distribuição de epppgs por sexo?
+    1.2.2) Qual o percetual de abandono de carreira pelos eppggs nos últimos sete anos?
+            
+  1.3) *Sobre cargos*
+    1.3.1) Como estão distribuídos os cargos entre a carreira dos eppggs?
+    1.3.2) Predominam os DADs ou FGDs?
+  
+  1.4) *Sobre Secretaria de atuação*
+    1.4.1) Em quais secretarias estão distribuídos os eppggs?
+    1.4.2) Como se deu a troca de secretarias por eppggs nos últimos sete anos?
+
+*Fase 2: análise bivariada*
+
+  2.1) Qual a relação entre o salário médio de um eppgg e o sexo?
+  2.2) Qual a relação entre o saládio de um eppgg e o tempo de carreira?
+  2.3) Qual a distribuição do salário entre grupos de novos entrantes?
+  2.4) A evasão ocorrida nos últimos 7 anos foi mais frequente em algum período ou para alguma faixa salarial?
+  2.5) Em qual secretaria houve maior predominância de EPPGGs com cargos (FGD ou DAD)?
+  2.6) Qual o tempo médio para um eppgg recém formado assumir um cargo - por secretaria?
+
+
+## 2. Fase de Trabalho 01
+
+  1.1) *Sobre salário*
+    1.1.1) Qual o salário médio de um eppgg (em 2019)?
+    
+```{r}
+### Remuneração média dos eppggs:
+eppggs_dataset %>% 
+  group_by(ANO_SALARIO) %>% 
+  summarize(MEDIO_EPPGG_BRUTO = round(mean(REM_BASICA_BRUTA), digits = 2),
+            MEDIO_EPPGG_LIQUID = round(mean(REM_POS_DEDUCOES), digits = 2)) %>%
+  setNames(c("ANO DO EXERCÍCIO", "SALÁRIO MÉDIO BRUTO", "SALÁRIO MÉDIO LIQUIDO"))
+  
+### Definição da paleta de cores
+pal <- wes_palette("Zissou1", type = "discrete", n = 4)
+pal2 <- wes_palette("Zissou1", type = "continuous", n = 4)
+pal_all <- wes_palette("Zissou1", type = "discrete", n = 5)
+
+```
+
+    1.1.2) Como estão distribuídos os eppggs dentro de uma faixa salarial?
+    
+```{r fig.width=9, fig.height=5}
+
+salario_medio_2018 <- eppggs_dataset %>%
+                             filter(ANO_SALARIO == 2018) %>% 
+                             pull(REM_BASICA_BRUTA) %>% 
+                             mean(.)
+
+salarios_outliers_2018 <- boxplot.stats(eppggs_dataset %>%
+                                          filter(ANO_SALARIO == 2018) %>%
+                                          pull(REM_BASICA_BRUTA))$out %>%
+  sort()
+
+### Distribuição dos salários
+eppggs_dataset %>% 
+  filter(ANO_SALARIO == 2018) %>% 
+  group_by(CODIGO) %>% 
+  summarize(AVG_SALARY = mean(REM_BASICA_BRUTA)) %>% 
+  ungroup() %>%
+  arrange(AVG_SALARY) %>%
+  filter(AVG_SALARY > 1000) %>% 
+  ggplot(mapping = aes(y = AVG_SALARY)) +
+  geom_boxplot(color = pal[1]) +
+  theme_minimal() +
+  labs(title = "Distribuição Salarial EPPGG (remuneração bruta) - 2018",
+       subtitle = "Salários de todos os eppggs ativos da carreira - considerando a média salarial de cada servidor em 2018",
+       x = "",
+       y = "Salário Bruto",
+       caption = "Fonte: Portal da Transparência de Minas Gerais | @ArthurCheib") +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  annotate(geom = "text", x = -0.21, y = 17850, size = 3.8, color = pal[3],
+           label = glue::glue("Mediana dos salários (2018): \n R$ 10.567,31")) +
+  geom_curve(x = -0.26, y = 17000, xend = -0.31, yend = c(salario_medio_2018-500),
+             arrow = arrow(length = unit(0.12, "inch")), size = 0.75,
+             color = pal[3], curvature = 0.2) +
+  annotate(geom = "text", x = 0.11, y = 19000, size = 3.8, color = pal2[4],
+           label = glue::glue("Outliers: salários fora do padrão \n da carreira: R$ 24.000,00 +")) +
+  geom_curve(x = 0.08, y = 20000, xend = 0.01, yend = c(min(salarios_outliers_2018)),
+             arrow = arrow(length = unit(0.12, "inch")), size = 0.75,
+             color = pal2[4], curvature = 0.2) +
+  theme(plot.title = element_text(colour = "black", face = "bold", size = 15),
+        plot.subtitle = element_text(colour = "cornsilk4", size = 12),
+        plot.caption = element_text(colour = "cornsilk4", size = 11.5),
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 15, colour = "black", face = "bold")) +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "R$", big.mark = "."))
+
+
+```
+
+      1.1.3) Em quais secretarias se encontraram os maiores 100 salários da carreira em 2018?
 
 ```{r fig.width=9, fig.height=5}
-lookup_df %>%
-  mutate(CSAP = str_c("CSAP ", CSAP_RANK),
-         ANO_FORMATURA = year(CONCLUSAO_GRAD)) %>% 
-  group_by(ANO_FORMATURA) %>% 
-  summarize(TOTAL_CSAPIANOS = n()) %>% 
-  filter(ANO_FORMATURA != 2017) %>% 
-  ggplot(aes(x = as.factor(ANO_FORMATURA), y = TOTAL_CSAPIANOS, fill = ANO_FORMATURA)) +
-  geom_col() +
-  ylim(0, 80) +
-  geom_text(aes(label = TOTAL_CSAPIANOS ), nudge_y = -2, color = "white", size = 3.5) +
-  theme_economist() +
-  labs(title = "TOTAL DE GRADUADOS NA FUNDAÇÃO JOÃO PINHEIRO - POR ANO",
-     subtitle = "Informações até o último ano de ocorrência da nomeação dos graduados",
-       y = "",
-       x = "") +
-  theme(legend.position="none",
-        plot.title = element_text(hjust = 0, size = 14))
+
+### Salários outliers
+salarios_outliers <- boxplot.stats(eppggs_dataset$REM_BASICA_BRUTA)$out
+
+casos_outliers <- which(eppggs_dataset$REM_BASICA_BRUTA %in% salarios_outliers)
+
+eppggs_dataset %>%
+  filter(ANO_SALARIO == 2018) %>% 
+  arrange(CODIGO, desc(REM_BASICA_BRUTA)) %>%
+  group_by(CODIGO) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  head(100) %>% 
+  count(ORGAO_ENTIDADE, sort = T, name = 'TOTAL') %>% 
+  group_by(ORGAO_ENTIDADE = fct_lump(ORGAO_ENTIDADE, n = 3, w = TOTAL)) %>%
+  summarize(TOTAL_EPPGGS = sum(TOTAL)) %>% 
+  ungroup() %>% 
+  arrange(desc(TOTAL_EPPGGS)) %>% 
+  mutate(ORGAO_ENTIDADE = fct_recode(ORGAO_ENTIDADE,
+                                     "OUTRAS*" = "Other",
+                                     "SEPLAG" = "SEC DE PLANEJAMENTO E GESTAO",
+                                     "FJP" = "FUNDACAO JOAO PINHEIRO",
+                                     "FAZENDA" = "SECRETARIA DA FAZENDA"),
+         PERCENTUAL = TOTAL_EPPGGS / sum(TOTAL_EPPGGS),
+         PERCENTUAL_ACUMULADO_ASC = cumsum(PERCENTUAL),
+         PERCENTUAL_ACUMULADO_DESC = c(0, head(PERCENTUAL_ACUMULADO_ASC, n=-1)),
+         POSICAO_LEGENDA = ((PERCENTUAL_ACUMULADO_ASC + PERCENTUAL_ACUMULADO_DESC) / 2),
+         LEGENDA = str_c(ORGAO_ENTIDADE, "\n ", PERCENTUAL*100, "%")) %>% 
+  ggplot(aes(ymax = PERCENTUAL_ACUMULADO_ASC,
+             ymin = PERCENTUAL_ACUMULADO_DESC,
+             xmax = 4,
+             xmin = 3,
+             fill = ORGAO_ENTIDADE)) +
+  geom_rect() +
+  geom_text(x = 2, aes(y = POSICAO_LEGENDA, label = LEGENDA, size = 12), colour = pal2[c(4,2,1,3)]) +
+  scale_fill_manual(values = pal2) +
+  coord_polar(theta="y") +
+  xlim(c(-1, 4)) +
+  theme_void() +
+  theme(legend.position = "none") +
+  labs(title = "Em que órgãos do Estado estão os 100 maiores salários?",
+       subtitle = "Top 100 salários dos EPPGGs - por secretaria de atuação (2018)",
+       x = "",
+       y = "Salário Bruto",
+       caption = "Fonte: Portal da Transparência de Minas Gerais | @ArthurCheib") +
+  theme(plot.title = element_text(colour = "black", face = "bold", size = 18),
+        plot.subtitle = element_text(colour = "cornsilk4", size = 14),
+        plot.caption = element_text(colour = "cornsilk4", size = 12))
+
+
 ```
 
-Evolução da quantidade de EPPGGS na folha salarial entre 2013 e 2017
+Evolução da quantidade de EPPGGS na folha salarial entre 2013 e 2018
+
 ```{r}
 eppggs_dataset %>% 
   group_by(ANO_SALARIO) %>% 
   summarize(TOTAL = n_distinct(CODIGO)) %>%
   ggplot(aes(ANO_SALARIO, TOTAL, fill = ANO_SALARIO)) +
-  geom_col() +
+  geom_col(fill = c(pal_all, pal_all[1])) +
   geom_text(aes(label = TOTAL), position = position_dodge(width = 0.9), vjust = -0.45, size = 3.5) +
-  ylim(0, 800) +
-  labs(title = "Evolução do total de servidores no Estado de MG - 2013 e 2017",
-       subtitle = "Carreira de Especialistas em Políticas Públicas e Gestão Governamental",
-       x = "ANO",
-       y = "QUANTIDADE") +
-  theme_economist() +
-  theme(legend.position="none",
-        plot.title = element_text(hjust = 0, size = 14))
-```
-
-Número de csapianos por CSAP
-Este gráfico deve ter os dados trocados pela procv_csap (informações da quantidade de formandos apenas)
-```{r fig.width=8, fig.height=6}
-
-meanline_df <- eppggs_dataset %>%
-  filter(CSAP != "CSAP NA") %>% 
-  group_by(CSAP, CSAP_RANK) %>% 
-  summarize(MEAN = n_distinct(CODIGO)) %>% 
-  mutate(TOTAL = "TOTAL") %>% 
-  group_by(TOTAL) %>% 
-  summarize(MEAN = round(mean(MEAN)))
-
-mean_line <- meanline_df[2][[1]]
-
-eppggs_dataset %>%
-  filter(CSAP != "CSAP NA") %>% 
-  group_by(CSAP, CSAP_RANK) %>% 
-  summarize(TOTAL = n_distinct(CODIGO)) %>% 
-  arrange(CSAP_RANK) %>% 
-  ggplot(aes(x = fct_reorder(CSAP, TOTAL), y = TOTAL, fill = CSAP)) +
-  geom_col() +
-  theme_economist() +
-  coord_flip() +
-  geom_hline(yintercept = mean_line) +
-  geom_text(aes(10, mean_line,label = "Média por turma = 23", vjust = 3, hjust = -0.1)) +
+  ylim(0, 1000) +
+  scale_x_continuous(breaks = seq(2013, 2018, 1)) +
+  labs(title = "Evolução do total de servidores no Estado de MG - 2013 e 2018",
+       subtitle = "Especialistas em Políticas Públicas e Gestão Governamental",
+       x = "",
+       y = "Total de Servidores",
+       caption = "Fonte: Portal da Transparência de Minas Gerais | @ArthurCheib") +
+  theme_minimal() +
   theme(legend.position = "none",
-        plot.title = element_text( size = 12)) +
-  labs(title = "TOTAL DE ESPECIALISTAS EM POLÍTICAS PÚBLICAS \n E GESTÃO GOVERNAMENTAL - POR CSAP",
-       subtitle = "Dados obtidos até 12/2017",
-       y = "",
-       x = "QUANTIDADE")
+        plot.title = element_text(hjust = 0, size = 14)) +
+  theme(plot.title = element_text(colour = "black", face = "bold", size = 18),
+        plot.subtitle = element_text(colour = "cornsilk4", size = 14),
+        plot.caption = element_text(colour = "cornsilk4", size = 12)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 13),
+        axis.title.y = element_text(size = 16, hjust = 0.5, vjust = 3)) +
+  annotate("label", x = 2017, y = 850, size = 3.1, color = "cadetblue4",
+           label = glue::glue("Primeiro ano sem \n nomeações na carreira"), ) +
+  geom_curve(x = 2017.5, y = 850, xend = 2018, yend = 705,
+             arrow = arrow(length = unit(0.12, "inch")), size = 0.75,
+             color = "cadetblue4", curvature = -0.2)
+
 
 ```
 
-Range salarial dos EPPGG's por CSAP (gráfico com as duas pontinhas e a linha ao meio)
-```{r message=FALSE, warning=FALSE}
+Percentual de servidores por sexo - simples, mas complicado:
 
-eppggs_dataset %>%
-  filter(CSAP != "CSAP NA") %>% 
-  mutate(TOTAL_DEFLATED = round(deflate(REM_POS_DEDUCOES, DATA_SALARIO, "11/2017", "ipca"), digits = 2)) %>%
-  select(-REM_POS_DEDUCOES) %>%
-  group_by(CODIGO, CSAP, CSAP_RANK) %>% 
-  summarize(TOTAL_FEITO = mean(TOTAL_DEFLATED)) %>% 
-  group_by(CSAP, CSAP_RANK) %>% 
-  summarize('25th' = quantile((TOTAL_FEITO), .25), 
-            '75th' = quantile((TOTAL_FEITO), .75)) %>%
-  gather(key = INDICADORES, value = VALORES, -CSAP, -CSAP_RANK) %>% 
-  ggplot(aes(VALORES, fct_reorder(CSAP, CSAP_RANK, .desc = T))) +
-  geom_line(aes(group = CSAP)) +
-  geom_point(aes(color = INDICADORES), size = 2.5)
-```
+1. Como acrescentar uma linha de tendência entre a diferença total entre homens e mulheres?
 
-
-Número de csapianos por sexo + Percentual de mulheres trabalhando
 ```{r fig.width=8, fig.height=5}
+
 eppggs_dataset %>%
-  na.omit() %>% 
+  separate(col = NOME, into = "PRIMEIRO_NOME", sep = " ", remove = F) %>%
+  mutate(SEXO = genderBR::get_gender(PRIMEIRO_NOME, threshold = 0.6, internal = T),
+         SEXO = fct_recode(SEXO, "MASCULINO" = "Male", "FEMININO" = "Female")) %>%
+  filter(!is.na(SEXO)) %>% 
   group_by(ANO_SALARIO, SEXO) %>% 
   summarize(TOTAL = n_distinct(CODIGO)) %>% 
   spread(key = SEXO, value = TOTAL) %>% 
@@ -135,23 +247,38 @@ eppggs_dataset %>%
   select(-SEXO_2) %>% 
   arrange(ANO_SALARIO) %>% 
   ggplot(aes(x = ANO_SALARIO, y = PERCENTUAL, fill = SEXO)) +
-    geom_col(alpha = 0.9) +
-      theme_economist() +
-      theme(legend.position = "bottom",
+  geom_col(alpha = 0.9) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
             legend.title = element_blank(),
             legend.text = element_text(size = 6),
             plot.title = element_text( size = 12)) +
-  geom_text(aes(label = ABSOLUTO), position = position_stack(vjust = 0.5), color = "white") +
+  geom_text(aes(label = ABSOLUTO), position = position_stack(vjust = 0.5), color = "white", size = 6) +
       labs(title = "% DE SERVIDORES - POR SEXO",
-           subtitle = "Carreira de Especialista em Políticas Públicas e Gestão Governamental ",
-           y = "Frequência",
-           x = "")
+           subtitle = "Especialista em Políticas Públicas e Gestão Governamental ",
+           y = "",
+           x = "",
+           caption = "Fonte: Portal da Transparência de Minas Gerais | @ArthurCheib") +
+  scale_y_continuous(labels = scales::label_percent(scale = 1)) +
+  scale_x_continuous(breaks = seq(2013, 2018, 1)) +
+  theme(plot.title = element_text(colour = "black", face = "bold", size = 18),
+        plot.subtitle = element_text(colour = "cornsilk4", size = 14),
+        plot.caption = element_text(colour = "cornsilk4", size = 12)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.5, vjust = 3)) +
+  scale_fill_manual(values = c(pal_all[3], pal_all[1])) +
+  geom_hline(aes(yintercept = 50), colour = pal_all[5], linetype="dashed", size = 1.25)
 
 
 ```
 
+Gráfico com os percentuais de cargos entre osm membros da carreira?
+
 ```{r fig.width=8, fig.height=5}
-# O Critério estabelecido para verificação do percentual médio de EPPGGS com cargo foi considerar +7 meses com ele  = ANO COM CARGO
+# O Critério estabelecido para verificação do percentual médio de EPPGGS com cargo foi considerar +7 meses com ele  = ANO COM CARGO.
 percent_graph_df <- eppggs_dataset %>%
   select(CODIGO, NOME, CSAP, CSAP_RANK, CARGO, DATA_SALARIO, ANO_SALARIO) %>%
   group_by(ANO_SALARIO, CODIGO, NOME, CSAP, CSAP_RANK, CARGO) %>% 
@@ -164,43 +291,84 @@ percent_graph_df <- eppggs_dataset %>%
 new_names <- c("ANO_SALARIO", "SIM_CARGO", "NO_CARGO")
 colnames(percent_graph_df) <- new_names
 
+# df_tendencia <- percent_graph_df %>% 
+#   mutate(COM_CARGO = round(SIM_CARGO/sum(SIM_CARGO, NO_CARGO)*100, digits = 2),
+#            SEM_CARGO = (100 - COM_CARGO)) %>%
+#   select(-SIM_CARGO, -NO_CARGO) %>% 
+#   gather(CARGOS, PERCENTUAIS, -ANO_SALARIO) %>%
+#   arrange(ANO_SALARIO) %>%
+#   ungroup() %>% 
+#   filter(CARGOS == "COM_CARGO")
+# 
+# linha_tendencia <- lm(data = df_tendencia, PERCENTUAIS ~ ANO_SALARIO)
+
 percent_graph_df %>% 
   mutate(COM_CARGO = round(SIM_CARGO/sum(SIM_CARGO, NO_CARGO)*100, digits = 2),
          SEM_CARGO = (100 - COM_CARGO)) %>%
   select(-SIM_CARGO, -NO_CARGO) %>% 
   gather(CARGOS, PERCENTUAIS, -ANO_SALARIO) %>%
   arrange(ANO_SALARIO) %>% 
+  mutate(CARGOS = fct_recode(CARGOS, "POSSUI CARGO/FUNÇÃO" = "COM_CARGO",
+                             "SEM CARGO/FUNÇÃO" = "SEM_CARGO")) %>% 
   ggplot(aes(x = ANO_SALARIO, y = PERCENTUAIS, fill = CARGOS)) +
-    geom_col(alpha = 0.9) +
-      theme_economist() +
-      theme(legend.position = "bottom",
-            legend.title = element_blank(),
-            legend.text = element_text(size = 6),
-            plot.title = element_text( size = 12)) +
-  geom_text(aes(label = str_c(PERCENTUAIS, " %")), vjust = 1.5, color = "white") +
-      labs(title = "% DE SERVIDORES COM CARGO EM COMISSÃO - POR ANO",
-           subtitle = "Carreira de Especialista em Políticas Públicas e Gestão Governamental ",
-           y = "Frequência",
-           x = "")
+  geom_col(alpha = 0.9) +
+  theme(legend.title = element_text("LEGENDA"),
+        legend.text = element_text(size = 6),
+        plot.title = element_text( size = 12)) +
+  geom_text(aes(label = str_c(PERCENTUAIS, "%")), vjust = 3.5, color = "white", size = 4.5) +
+      labs(title = "% DE SERVIDORES COM CARGOS OU FUNÇÕES DE CONFIANÇA - POR ANO",
+           subtitle = "Especialista em Políticas Públicas e Gestão Governamental ",
+           y = "",
+           x = "",
+           caption = "Fonte: Portal da Transparência de Minas Gerais | @ArthurCheib") +
+  scale_y_continuous(labels = scales::label_percent(scale = 1)) +
+  scale_x_continuous(breaks = seq(2013, 2018, 1)) +
+  theme_minimal() +
+  theme(plot.title = element_text(colour = "black", face = "bold", size = 18),
+        plot.subtitle = element_text(colour = "cornsilk4", size = 14),
+        plot.caption = element_text(colour = "cornsilk4", size = 12)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.y = element_text(size = 16, hjust = 0.5, vjust = 3)) +
+  scale_fill_manual(values = c(pal_all[1], pal_all[5]), name = "LEGENDA")
+
+
+#geom_abline(intercept = coef(linha_tendencia)[[1]], slope = coef(linha_tendencia)[[2]])
 
 ```
 
-Análise da média salarial por csap entre homens e mulheres ano a ano
+Análise da média salarial entre homens e mulheres ano a ano
+
 ```{r}
-# Teste para elaboração do gráfico para csaps.
-eppggs_dataset %>% 
-  na.omit() %>%
-  filter(CSAP != "CSAP 31") %>% 
+eppggs_dataset %>%
+  as_tibble() %>%
+  separate(col = NOME, into = "PRIMEIRO_NOME", sep = " ", remove = F) %>%
+  mutate(SEXO = genderBR::get_gender(PRIMEIRO_NOME, threshold = 0.6, internal = T),
+         SEXO = fct_recode(SEXO, "MASCULINO" = "Male", "FEMININO" = "Female")) %>%
+  filter(!is.na(SEXO)) %>% 
   group_by(ANO_SALARIO, SEXO) %>% 
   summarize(TOTAL_MONEY = round(mean(REM_POS_DEDUCOES), digits = 2)) %>% 
   mutate(RENDA_MEDIA = ifelse(test = SEXO == "FEMININO", yes = -TOTAL_MONEY, no = TOTAL_MONEY)) %>% 
   ggplot(aes(x = ANO_SALARIO,  y = RENDA_MEDIA, fill = SEXO, ymin = -12000, ymax = 12000)) +
   geom_col() +
   coord_flip() +
-  theme_bw() +
   scale_y_continuous(labels = abs) +
   geom_label(aes(label = str_c("R$ ", format(abs(RENDA_MEDIA), big.mark = ","))), fill = "white") +
+  scale_x_continuous(breaks = seq(2013, 2018, 1)) +
+  labs(title = "Evolução da média salarial entre os gêneros",
+       subtitle = "Carreira de Especialistas em Políticas Públicas e Gestão Governamental",
+       x = "",
+       y = "",
+       caption = "Fonte: Portal da Transparência de Minas Gerais | @ArthurCheib") +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  theme(plot.title = element_text(size = 16)) +
+  theme(legend.position = "bottom") +
   theme_economist()
+  
 ```
 
 
@@ -215,14 +383,6 @@ ANOS_FORMADO = round(abs(as.duration(ANO_SALARIO %--% ANO_GRADUACAO)/dyears(1)),
 ## Quebrar análise por sexo:
 
 * b. Verificar avanço número da proporção homens x mulheres (salário médio entre csaps (homens x mulheres))
-* c. Verificar relação salarial entre os sexos (como fazer isso levando em conta a desprorporção)
-* d. Qual foi o tempo médio gasto por um csapiano para assumir um cargo em até 02 anos ()
-
-## Quebrar a análise por CSAP:
-Proporcionalmente, qual CSAP tem hoje o melhor desempenho em:
-* Permanência na carreira (prop. de quantos entraram e quantos saíram)
-* Desempenho salarial global
-* Rising stars (maior quantidade de cargos ou prop de csapianos com cargos)
 
 ## Análise do fluxo de EPPGG's dentro do Estado:
 * Principal secretaria em que estão alocados
