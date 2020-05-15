@@ -1,5 +1,5 @@
 # Função que identifica os novos entrantes e descobre, então, o tempo médio de cada um deles para aceder a um cargo.
-calc_media_cargo <- function(semestre, ano) {
+calc_first_prom_each <- function(semestre, ano) {
   
   ### Criando os limites dos salários
   if (semestre == 1) {
@@ -68,4 +68,9 @@ calc_media_cargo <- function(semestre, ano) {
     arrange(CODIGO, DATA_SALARIO) %>% 
     group_by(CODIGO) %>%
     slice(1) %>% 
-    ungroup()
+    ungroup() %>% 
+    mutate(NM_ENTRANTE = str_c("Entrante ", semestre, "/", ano))
+  
+}
+  
+  

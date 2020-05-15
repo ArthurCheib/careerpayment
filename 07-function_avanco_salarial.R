@@ -87,10 +87,11 @@ calc_evol_salarial <- function(semestre, ano) {
     select(CODIGO, REM_BASICA_BRUTA, MES_SALARIO) %>%
     group_by(CODIGO) %>% 
     mutate(PERC_AVANCO_MENSAL = round((REM_BASICA_BRUTA/min(REM_BASICA_BRUTA)-1)*100, digits = 2)) %>% 
-    filter(PERC_AVANCO_MENSAL != 0)
-
-  
-  print(x)
+    filter(PERC_AVANCO_MENSAL != 0) %>% 
+    ungroup() %>% 
+    group_by(CODIGO) %>% 
+    filter(MES_SALARIO == max(MES_SALARIO) | MES_SALARIO == min(MES_SALARIO)) %>% 
+    ungroup()
   
 }
   
