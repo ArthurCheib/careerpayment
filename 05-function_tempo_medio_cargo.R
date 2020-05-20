@@ -63,7 +63,7 @@ calc_media_cargo <- function(semestre, ano) {
   
   
   ### Analisando o tempo médio dos que entraram e conseguiram cargo - em quanto tempo foi?
-  x <<- df_entrantes %>% 
+  x <- df_entrantes %>% 
     filter(CARGO == "COM CARGO") %>% 
     arrange(CODIGO, DATA_SALARIO) %>% 
     group_by(CODIGO) %>%
@@ -75,7 +75,5 @@ calc_media_cargo <- function(semestre, ano) {
     setNames(c("TEMP_MEDIO_CARGO")) %>% 
     mutate(NM_ENTRANTE = str_c("Entrante ", semestre, "/", ano)) %>% 
     select(NM_ENTRANTE, TEMP_MEDIO_CARGO)
-  
-  print(x)
   
 }
